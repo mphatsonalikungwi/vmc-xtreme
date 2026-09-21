@@ -1,6 +1,6 @@
 export const VMC_CONFIG = Object.freeze({
-  supabaseUrl: "",
-  supabasePublishableKey: "",
+  supabaseUrl: "https://czdxwlioouuredaliplw.supabase.co",
+  supabasePublishableKey: "sb_publishable_-ldpCiaxCElX9c7Q6zLqqQ_gHUBunBI",
   gym: Object.freeze({
     name: "VMC Xtreme Fitness",
     location: "Chilinde 1, Sankhawekha, Lilongwe, Malawi",
