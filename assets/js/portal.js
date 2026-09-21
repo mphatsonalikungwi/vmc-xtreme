@@ -27,7 +27,81 @@ let renewalPlans=[];
 async function loadRenewalPlans(){const{data,error}=await supabase.from("vmc_membership_plans").select("id,name,duration_unit,duration_count,session_type,price").order("price");if(error)throw error;renewalPlans=data||[];bindRenewalControls()}
 function bindRenewalControls(){const d=document.querySelector("[data-renew-duration]"),c=document.querySelector("[data-renew-count]"),s=document.querySelector("[data-renew-session]");const update=()=>{const plan=renewalPlans.find(p=>p.duration_unit===d.value&&p.session_type===s.value);const count=Math.max(1,Math.min(12,Number(c.value)||1));const price=plan?Number(plan.price)*count:0;document.querySelector("[data-renew-name]").textContent=plan?(plan.name+" · "+titleCase(plan.session_type)):"Plan unavailable";document.querySelector("[data-renew-summary]").textContent=count+" "+d.value+(count===1?"":"s");document.querySelector("[data-renew-price]").textContent=plan?formatMoney(price):"—"};[d,c,s].forEach(x=>x?.addEventListener("input",update));update()}
 async function loadPortal(){setupMenu();const{data:userData,error:userError}=await supabase.auth.getUser();if(userError||!userData.user){location.href=loginPath;return}const userId=userData.user.id;const{data:profile,error:profileError}=await supabase.from("vmc_profiles").select("id,full_name,username,phone,email,avatar_url,must_change_password,account_status").eq("id",userId).single();if(profileError||!profile||profile.account_status!=="active"){await supabase.auth.signOut();location.href=loginPath;return}if(profile.must_change_password){location.href="../auth/change-password.html?next="+encodeURIComponent(pageType==="management"?"../management/":"../member/");return}const{data:roleRows,error:roleError}=await supabase.from("vmc_user_roles").select("role:vmc_roles(name)").eq("user_id",userId);if(roleError)throw roleError;const roles=(roleRows||[]).map(r=>r.role?.name).filter(Boolean);const activeRole=roles.find(r=>allowedRoles.includes(r));if(!activeRole){await supabase.auth.signOut();location.href=loginPath;return}document.querySelectorAll("[data-portal-name]").forEach(e=>e.textContent=profile.full_name);document.querySelectorAll("[data-portal-username]").forEach(e=>e.textContent=profile.username||"Not assigned");$("[data-account-status]")?.replaceChildren(document.createTextNode(titleCase(profile.account_status)));if(profile.avatar_url){const img=$("[data-profile-avatar-image]");if(img){try{const avatarSrc=await resolveProfileAvatar(profile.avatar_url);if(avatarSrc){img.src=avatarSrc;img.alt=profile.full_name+"'s profile picture";img.hidden=false;$("[data-profile-initials]")?.setAttribute("hidden","")}}catch(e){console.error("VMC avatar load failed:",e)}}}else{$("[data-profile-initials]")?.replaceChildren(document.createTextNode(initials(profile.full_name)))}if(pageType==="member")await loadMemberOverview(userId);if(pageType==="member"&&location.pathname.endsWith("/membership.html"))await loadMembershipPage(userId);if(pageType==="member"&&location.pathname.endsWith("/payments.html"))await loadPaymentsPage(userId);if(pageType==="member"&&location.pathname.endsWith("/attendance.html"))await loadAttendancePage(userId);if(pageType==="member"&&location.pathname.endsWith("/profile.html"))await loadProfilePage(userId,profile);if(pageType==="member"&&location.pathname.endsWith("/photos.html"))await loadPhotosPage(userId);if(pageType==="member"&&location.pathname.endsWith("/notifications.html"))await loadNotificationsPage(userId);if(pageType==="management")await loadManagementOverview()}
-async function loadMemberOverview(userId){const[m,a,p]=await Promise.all([supabase.from("vmc_memberships").select("status,start_date,end_date,training_mode,plan:vmc_membership_plans(name,duration_unit,duration_count,session_type,price)").eq("member_id",userId).order("created_at",{ascending:false}).limit(1).maybeSingle(),supabase.from("vmc_attendance").select("id",{count:"exact",head:true}).eq("member_id",userId),supabase.from("vmc_payments").select("amount,payment_method,receipt_reference,payment_date,status").eq("member_id",userId).order("payment_date",{ascending:false}).limit(1).maybeSingle()]);if(m.error)throw m.error;if(a.error)throw a.error;if(p.error)throw p.error;renderMembership(m.data);$("[data-attendance-count]")?.replaceChildren(document.createTextNode(String(a.count??0)));renderLatestPayment(p.data);await loadNotificationPreview(userId)}
+async function loadMemberOverview(userId){
+  const [m,a,p,n] = await Promise.all([
+    supabase.from("vmc_memberships").select("id,status,start_date,end_date,training_mode,created_at,plan:vmc_membership_plans(name,duration_unit,duration_count,session_type,price)").eq("member_id",userId).order("created_at",{ascending:false}).limit(1).maybeSingle(),
+    supabase.from("vmc_attendance").select("id,checked_in_at,checked_out_at,created_at").eq("member_id",userId).order("checked_in_at",{ascending:false}).limit(60),
+    supabase.from("vmc_payments").select("id,amount,payment_method,receipt_reference,payment_date,status").eq("member_id",userId).order("payment_date",{ascending:false}).limit(5),
+    supabase.from("vmc_notifications").select("id,title,message,read_at,created_at").eq("member_id",userId).order("created_at",{ascending:false}).limit(5)
+  ]);
+  if(m.error)throw m.error;if(a.error)throw a.error;if(p.error)throw p.error;if(n.error)throw n.error;
+  const membership=m.data, attendance=a.data||[], payments=p.data||[], notifications=n.data||[];
+  renderMembership(membership);
+  const allAttendanceCount = await supabase.from("vmc_attendance").select("id",{count:"exact",head:true}).eq("member_id",userId);
+  if(allAttendanceCount.error)throw allAttendanceCount.error;
+  $("[data-attendance-count]")?.replaceChildren(document.createTextNode(String(allAttendanceCount.count??attendance.length)));
+  renderLatestPayment(payments[0]||null);
+  renderDashboardIntelligence(membership,attendance,payments,notifications);
+  await loadNotificationPreview(userId);
+}
+function attendanceStreak(rows){
+  const dates=[...new Set((rows||[]).map(r=>new Date(r.checked_in_at).toISOString().slice(0,10)))].sort().reverse();
+  if(!dates.length)return 0;
+  const today=new Date();today.setHours(0,0,0,0);
+  const latest=new Date(dates[0]+"T00:00:00");
+  const gap=Math.round((today-latest)/86400000);
+  if(gap>1)return 0;
+  let streak=0;
+  for(let i=0;i<dates.length;i++){
+    const expected=new Date(latest);expected.setDate(latest.getDate()-i);
+    if(dates[i]===expected.toISOString().slice(0,10))streak++;else break;
+  }
+  return streak;
+}
+function renderDashboardIntelligence(m,attendance,payments,notifications){
+  const streak=attendanceStreak(attendance);
+  $("[data-attendance-streak]")?.replaceChildren(document.createTextNode(String(streak)));
+  const latestCheckin=attendance[0];
+  $("[data-latest-checkin]")?.replaceChildren(document.createTextNode(latestCheckin?formatDateTime(latestCheckin.checked_in_at):"—"));
+  $("[data-latest-checkin-detail]")?.replaceChildren(document.createTextNode(latestCheckin?.checked_out_at?"Checked out at "+formatTime(latestCheckin.checked_out_at):latestCheckin?"Check-in recorded":"No attendance recorded yet."));
+  const payment=payments[0];
+  const paymentState=$("[data-payment-state]"),paymentDetail=$("[data-payment-state-detail]");
+  if(payment){
+    const state=titleCase(payment.status);
+    paymentState?.replaceChildren(document.createTextNode(state));
+    paymentState?.dataset.status=payment.status;
+    paymentDetail?.replaceChildren(document.createTextNode(formatMoney(payment.amount)+" · "+titleCase(payment.payment_method)+" · "+formatDate(payment.payment_date)));
+  }else{
+    paymentState?.replaceChildren(document.createTextNode("No payment"));
+    paymentDetail?.replaceChildren(document.createTextNode("No payment has been recorded yet."));
+  }
+  const days=daysRemaining(m?.end_date),health=$("[data-membership-health]"),healthDetail=$("[data-membership-health-detail]");
+  if(m?.status==="pending"){health.textContent="Awaiting verification";healthDetail.textContent="Your membership payment is under VMC review."}
+  else if(m?.status==="active"&&days!=null){
+    health.textContent=days<=7?"Renew soon":days<=30?"Active · plan ahead":"Active";
+    healthDetail.textContent=days+" day"+(days===1?"":"s")+" remaining · "+streak+" day"+(streak===1?"":"s")+" current streak.";
+  }else if(m?.status==="expired"||days===0){health.textContent="Expired";healthDetail.textContent="Review Membership for renewal options."}
+  else{health.textContent="Needs attention";healthDetail.textContent="Review your membership details and next steps."}
+  const na=$("[data-next-action]"),nd=$("[data-next-detail]");
+  if(m?.status==="pending"){na.textContent="Payment under review.";nd.textContent="Your submitted payment is waiting for VMC verification."}
+  else if(m?.status==="active"&&days!=null&&days<=7){na.textContent="Renew soon.";nd.textContent="Your membership ends in "+days+" day"+(days===1?"":"s")+". Open Membership to plan your next period."}
+  else if(m?.status==="active"&&streak===0){na.textContent="Get your next visit in.";nd.textContent="No current attendance streak is recorded. Your next check-in can restart it."}
+  else if(m?.status==="active"){na.textContent="Keep the streak going.";nd.textContent="You currently have a "+streak+"-day attendance streak. Keep building your consistency."}
+  else{na.textContent="Membership needs attention.";nd.textContent="Open Membership to review your current plan and renewal options."}
+  const journeyTitle=$("[data-journey-title]"),journeyDetail=$("[data-journey-detail]");
+  if(m?.status==="active"&&days!=null){
+    journeyTitle.textContent=streak>=3?"Consistency is building.":"Build your consistency.";
+    journeyDetail.textContent=streak>0?"Your current attendance streak is "+streak+" day"+(streak===1?"":"s")+". Keep showing up while your membership has "+days+" day"+(days===1?"":"s")+" remaining.":"Your membership is active for "+days+" more day"+(days===1?"":"s")+". Your next recorded visit will start your consistency streak.";
+  }else if(m?.status==="pending"){
+    journeyTitle.textContent="Your VMC journey is starting.";
+    journeyDetail.textContent="Your payment is under review. Once verified, your membership progress and attendance journey will update here.";
+  }
+  if(notifications.length){
+    const unread=notifications.filter(x=>!x.read_at).length;
+    const preview=$("[data-notification-preview-title]");
+    if(preview&&!notifications[0].read_at)preview.textContent=notifications[0].title;
+  }
+}
 function renderMembership(m){const s=m?.status||"not_set",start=m?.start_date,end=m?.end_date,plan=m?.plan;$("[data-membership-status]")?.replaceChildren(document.createTextNode(titleCase(s)));const pill=$("[data-membership-pill]");if(pill){pill.textContent=titleCase(s);pill.dataset.status=s}const planText=plan?plan.name+" · "+titleCase(plan.session_type)+" session"+(m?.training_mode?" · "+m.training_mode:""):"No membership plan recorded";$("[data-membership-detail]")?.replaceChildren(document.createTextNode(planText));$("[data-start-date]")?.replaceChildren(document.createTextNode("Start "+formatDate(start)));$("[data-end-date]")?.replaceChildren(document.createTextNode("End "+formatDate(end)));const progress=calculateProgress(start,end,s),bar=$("[data-membership-progress]"),percent=$("[data-progress-percent]"),track=$(".progress-track");if(bar)bar.style.width=progress+"%";if(percent)percent.textContent=progress+"%";track?.setAttribute("aria-valuenow",String(progress));const days=daysRemaining(end);$("[data-days-remaining]")?.replaceChildren(document.createTextNode(days==null?"—":String(days)));const na=$("[data-next-action]"),nd=$("[data-next-detail]");if(s==="active"&&days!=null){na.textContent=days<=7?"Renew soon.":"Keep showing up.";nd.textContent=days<=7?"Your membership ends in "+days+" day"+(days===1?"":"s")+".":"Your membership is active. Keep building your consistency."}else if(s==="pending"){na.textContent="Payment under review.";nd.textContent="VMC is reviewing your membership payment. Your status will update after verification."}else{na.textContent="Membership needs attention.";nd.textContent="Open Membership to review your current plan and renewal options."}$("[data-journey-title]")?.replaceChildren(document.createTextNode(days!=null&&days>0?"Build your consistency.":"Start your next VMC chapter."))}
 function calculateProgress(start,end,status){if(status==="pending"||!start||!end)return 0;const a=new Date(start+"T00:00:00").getTime(),b=new Date(end+"T23:59:59").getTime();if(!Number.isFinite(a)||!Number.isFinite(b)||b<=a)return 0;return Math.max(0,Math.min(100,Math.round(((Date.now()-a)/(b-a))*100)))}
 function daysRemaining(end){if(!end)return null;const t=new Date(end+"T23:59:59").getTime();return Number.isFinite(t)?Math.max(0,Math.ceil((t-Date.now())/86400000)):null}
