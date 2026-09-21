@@ -10,6 +10,13 @@ function formatDate(v){if(!v)return"—";const d=new Date(v+(v.length===10?"T00:
 function formatMoney(v){return v==null?"—":"K"+Number(v).toLocaleString("en-MW")}
 function titleCase(v){return text(v).replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase())}
 function initials(name){const p=text(name).trim().split(/\s+/).filter(Boolean);return(p.slice(0,2).map(x=>x[0]).join("")||"V").toUpperCase()}
+const GALLERY_BUCKET="member-gallery";
+const MAX_IMAGE_BYTES=8*1024*1024;
+const ALLOWED_IMAGE_TYPES=["image/jpeg","image/png","image/webp"];
+async function signedGalleryUrl(path){if(!path)return null;const{data,error}=await supabase.storage.from(GALLERY_BUCKET).createSignedUrl(path,3600);if(error)throw error;return data?.signedUrl||null}
+async function resolveProfileAvatar(path){if(!path)return null;if(/^https?:\/\//i.test(path))return path;return signedGalleryUrl(path)}
+function setNotice(el,message,isError=false){if(!el)return;el.textContent=message;el.dataset.state=isError?"error":"success";el.hidden=!message}
+function buildGalleryPath(userId,file){const ext=(file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"");return userId+"/"+crypto.randomUUID()+"."+ext}
 function setupMenu(){const sidebar=$("#member-nav"),overlay=$("[data-menu-overlay]"),toggle=$("[data-menu-toggle]");if(!sidebar||!toggle)return;const setOpen=open=>{sidebar.classList.toggle("is-open",open);if(overlay)overlay.toggleAttribute("hidden",!open);toggle.setAttribute("aria-expanded",String(open));document.body.classList.toggle("portal-menu-open",open)};toggle.addEventListener("click",()=>setOpen(!sidebar.classList.contains("is-open")));document.querySelectorAll("[data-menu-close]").forEach(b=>b.addEventListener("click",()=>setOpen(false)));overlay?.addEventListener("click",()=>setOpen(false));sidebar.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>setOpen(false)))}
 
 async function loadMembershipPage(userId){const{data:memberships,error}=await supabase.from("vmc_memberships").select("id,status,start_date,end_date,training_mode,created_at,plan:vmc_membership_plans(id,name,duration_unit,duration_count,session_type,price)").eq("member_id",userId).order("created_at",{ascending:false});if(error)throw error;const current=memberships?.[0]||null;renderMembershipPage(current);renderMembershipHistory(memberships||[]);await loadRenewalPlans()}
@@ -19,7 +26,7 @@ function renderMembershipHistory(rows){const body=document.querySelector("[data-
 let renewalPlans=[];
 async function loadRenewalPlans(){const{data,error}=await supabase.from("vmc_membership_plans").select("id,name,duration_unit,duration_count,session_type,price").order("price");if(error)throw error;renewalPlans=data||[];bindRenewalControls()}
 function bindRenewalControls(){const d=document.querySelector("[data-renew-duration]"),c=document.querySelector("[data-renew-count]"),s=document.querySelector("[data-renew-session]");const update=()=>{const plan=renewalPlans.find(p=>p.duration_unit===d.value&&p.session_type===s.value);const count=Math.max(1,Math.min(12,Number(c.value)||1));const price=plan?Number(plan.price)*count:0;document.querySelector("[data-renew-name]").textContent=plan?(plan.name+" · "+titleCase(plan.session_type)):"Plan unavailable";document.querySelector("[data-renew-summary]").textContent=count+" "+d.value+(count===1?"":"s");document.querySelector("[data-renew-price]").textContent=plan?formatMoney(price):"—"};[d,c,s].forEach(x=>x?.addEventListener("input",update));update()}
-async function loadPortal(){setupMenu();const{data:userData,error:userError}=await supabase.auth.getUser();if(userError||!userData.user){location.href=loginPath;return}const userId=userData.user.id;const{data:profile,error:profileError}=await supabase.from("vmc_profiles").select("id,full_name,username,phone,email,avatar_url,must_change_password,account_status").eq("id",userId).single();if(profileError||!profile||profile.account_status!=="active"){await supabase.auth.signOut();location.href=loginPath;return}if(profile.must_change_password){location.href="../auth/change-password.html?next="+encodeURIComponent(pageType==="management"?"../management/":"../member/");return}const{data:roleRows,error:roleError}=await supabase.from("vmc_user_roles").select("role:vmc_roles(name)").eq("user_id",userId);if(roleError)throw roleError;const roles=(roleRows||[]).map(r=>r.role?.name).filter(Boolean);const activeRole=roles.find(r=>allowedRoles.includes(r));if(!activeRole){await supabase.auth.signOut();location.href=loginPath;return}document.querySelectorAll("[data-portal-name]").forEach(e=>e.textContent=profile.full_name);document.querySelectorAll("[data-portal-username]").forEach(e=>e.textContent=profile.username||"Not assigned");$("[data-account-status]")?.replaceChildren(document.createTextNode(titleCase(profile.account_status)));if(profile.avatar_url){const img=$("[data-profile-avatar-image]");if(img){img.src=profile.avatar_url;img.alt=profile.full_name+"'s profile picture";img.hidden=false;$("[data-profile-initials]")?.setAttribute("hidden","")}}else{$("[data-profile-initials]")?.replaceChildren(document.createTextNode(initials(profile.full_name)))}if(pageType==="member")await loadMemberOverview(userId);if(pageType==="member"&&location.pathname.endsWith("/membership.html"))await loadMembershipPage(userId);if(pageType==="member"&&location.pathname.endsWith("/payments.html"))await loadPaymentsPage(userId);if(pageType==="member"&&location.pathname.endsWith("/attendance.html"))await loadAttendancePage(userId);if(pageType==="management")await loadManagementOverview()}
+async function loadPortal(){setupMenu();const{data:userData,error:userError}=await supabase.auth.getUser();if(userError||!userData.user){location.href=loginPath;return}const userId=userData.user.id;const{data:profile,error:profileError}=await supabase.from("vmc_profiles").select("id,full_name,username,phone,email,avatar_url,must_change_password,account_status").eq("id",userId).single();if(profileError||!profile||profile.account_status!=="active"){await supabase.auth.signOut();location.href=loginPath;return}if(profile.must_change_password){location.href="../auth/change-password.html?next="+encodeURIComponent(pageType==="management"?"../management/":"../member/");return}const{data:roleRows,error:roleError}=await supabase.from("vmc_user_roles").select("role:vmc_roles(name)").eq("user_id",userId);if(roleError)throw roleError;const roles=(roleRows||[]).map(r=>r.role?.name).filter(Boolean);const activeRole=roles.find(r=>allowedRoles.includes(r));if(!activeRole){await supabase.auth.signOut();location.href=loginPath;return}document.querySelectorAll("[data-portal-name]").forEach(e=>e.textContent=profile.full_name);document.querySelectorAll("[data-portal-username]").forEach(e=>e.textContent=profile.username||"Not assigned");$("[data-account-status]")?.replaceChildren(document.createTextNode(titleCase(profile.account_status)));if(profile.avatar_url){const img=$("[data-profile-avatar-image]");if(img){try{const avatarSrc=await resolveProfileAvatar(profile.avatar_url);if(avatarSrc){img.src=avatarSrc;img.alt=profile.full_name+"'s profile picture";img.hidden=false;$("[data-profile-initials]")?.setAttribute("hidden","")}}catch(e){console.error("VMC avatar load failed:",e)}}}else{$("[data-profile-initials]")?.replaceChildren(document.createTextNode(initials(profile.full_name)))}if(pageType==="member")await loadMemberOverview(userId);if(pageType==="member"&&location.pathname.endsWith("/membership.html"))await loadMembershipPage(userId);if(pageType==="member"&&location.pathname.endsWith("/payments.html"))await loadPaymentsPage(userId);if(pageType==="member"&&location.pathname.endsWith("/attendance.html"))await loadAttendancePage(userId);if(pageType==="member"&&location.pathname.endsWith("/profile.html"))await loadProfilePage(userId,profile);if(pageType==="member"&&location.pathname.endsWith("/photos.html"))await loadPhotosPage(userId);if(pageType==="management")await loadManagementOverview()}
 async function loadMemberOverview(userId){const[m,a,p]=await Promise.all([supabase.from("vmc_memberships").select("status,start_date,end_date,training_mode,plan:vmc_membership_plans(name,duration_unit,duration_count,session_type,price)").eq("member_id",userId).order("created_at",{ascending:false}).limit(1).maybeSingle(),supabase.from("vmc_attendance").select("id",{count:"exact",head:true}).eq("member_id",userId),supabase.from("vmc_payments").select("amount,payment_method,receipt_reference,payment_date,status").eq("member_id",userId).order("payment_date",{ascending:false}).limit(1).maybeSingle()]);if(m.error)throw m.error;if(a.error)throw a.error;if(p.error)throw p.error;renderMembership(m.data);$("[data-attendance-count]")?.replaceChildren(document.createTextNode(String(a.count??0)));renderLatestPayment(p.data)}
 function renderMembership(m){const s=m?.status||"not_set",start=m?.start_date,end=m?.end_date,plan=m?.plan;$("[data-membership-status]")?.replaceChildren(document.createTextNode(titleCase(s)));const pill=$("[data-membership-pill]");if(pill){pill.textContent=titleCase(s);pill.dataset.status=s}const planText=plan?plan.name+" · "+titleCase(plan.session_type)+" session"+(m?.training_mode?" · "+m.training_mode:""):"No membership plan recorded";$("[data-membership-detail]")?.replaceChildren(document.createTextNode(planText));$("[data-start-date]")?.replaceChildren(document.createTextNode("Start "+formatDate(start)));$("[data-end-date]")?.replaceChildren(document.createTextNode("End "+formatDate(end)));const progress=calculateProgress(start,end,s),bar=$("[data-membership-progress]"),percent=$("[data-progress-percent]"),track=$(".progress-track");if(bar)bar.style.width=progress+"%";if(percent)percent.textContent=progress+"%";track?.setAttribute("aria-valuenow",String(progress));const days=daysRemaining(end);$("[data-days-remaining]")?.replaceChildren(document.createTextNode(days==null?"—":String(days)));const na=$("[data-next-action]"),nd=$("[data-next-detail]");if(s==="active"&&days!=null){na.textContent=days<=7?"Renew soon.":"Keep showing up.";nd.textContent=days<=7?"Your membership ends in "+days+" day"+(days===1?"":"s")+".":"Your membership is active. Keep building your consistency."}else if(s==="pending"){na.textContent="Payment under review.";nd.textContent="VMC is reviewing your membership payment. Your status will update after verification."}else{na.textContent="Membership needs attention.";nd.textContent="Open Membership to review your current plan and renewal options."}$("[data-journey-title]")?.replaceChildren(document.createTextNode(days!=null&&days>0?"Build your consistency.":"Start your next VMC chapter."))}
 function calculateProgress(start,end,status){if(status==="pending"||!start||!end)return 0;const a=new Date(start+"T00:00:00").getTime(),b=new Date(end+"T23:59:59").getTime();if(!Number.isFinite(a)||!Number.isFinite(b)||b<=a)return 0;return Math.max(0,Math.min(100,Math.round(((Date.now()-a)/(b-a))*100)))}
@@ -85,6 +92,73 @@ function renderAttendanceCalendar(dates){
   for(let i=0;i<offset;i++){const e=document.createElement("div");e.className="attendance-day is-empty";root.append(e)}
   const today=new Date().toISOString().slice(0,10);
   for(let day=1;day<=days;day++){const key=new Date(y,m,day).toISOString().slice(0,10),e=document.createElement("div");e.className="attendance-day"+(dates.has(key)?" is-present":"")+(key===today?" is-today":"");const n=document.createElement("span");n.className="attendance-day-number";n.textContent=String(day);e.append(n);root.append(e)}
+}
+
+async function uploadMemberPhoto(userId,file,makeProfile=false){
+  if(!file)throw new Error("Choose an image first.");
+  if(!ALLOWED_IMAGE_TYPES.includes(file.type))throw new Error("Use a JPG, PNG or WebP image.");
+  if(file.size>MAX_IMAGE_BYTES)throw new Error("The image must be 8 MB or smaller.");
+  const path=buildGalleryPath(userId,file);
+  const{error:uploadError}=await supabase.storage.from(GALLERY_BUCKET).upload(path,file,{cacheControl:"3600",upsert:false,contentType:file.type});
+  if(uploadError)throw uploadError;
+  const{data:photo,error:photoError}=await supabase.from("vmc_member_photos").insert({member_id:userId,storage_path:path,is_profile_photo:false}).select("id,member_id,storage_path,is_profile_photo,created_at").single();
+  if(photoError){await supabase.storage.from(GALLERY_BUCKET).remove([path]);throw photoError}
+  if(makeProfile){const{error}=await supabase.rpc("vmc_set_profile_photo",{photo_id:photo.id});if(error){await supabase.from("vmc_member_photos").delete().eq("id",photo.id).eq("member_id",userId);await supabase.storage.from(GALLERY_BUCKET).remove([path]);throw error}}
+  return photo
+}
+async function loadProfilePage(userId,profile){
+  const form=$("[data-profile-form]");if(!form)return;
+  const fields={full_name:form.querySelector("[name=full_name]"),phone:form.querySelector("[name=phone]"),email:form.querySelector("[name=email]"),date_of_birth:form.querySelector("[name=date_of_birth]"),gender:form.querySelector("[name=gender]"),emergency_contact:form.querySelector("[name=emergency_contact]")};
+  Object.entries(fields).forEach(([key,el])=>{if(el)el.value=profile[key]||""});
+  const username=form.querySelector("[data-profile-username]");if(username)username.textContent=profile.username||"Not assigned";
+  const avatar=form.querySelector("[data-profile-page-avatar]");
+  if(avatar&&profile.avatar_url){try{const src=await resolveProfileAvatar(profile.avatar_url);if(src){avatar.src=src;avatar.hidden=false}}catch(e){console.error("VMC profile avatar load failed:",e)}}
+  form.addEventListener("submit",async event=>{
+    event.preventDefault();const button=form.querySelector("[type=submit]"),notice=$("[data-profile-form-notice]");if(button)button.disabled=true;
+    try{
+      const payload={full_name:fields.full_name?.value.trim(),phone:fields.phone?.value.trim()||null,email:fields.email?.value.trim()||null,date_of_birth:fields.date_of_birth?.value||null,gender:fields.gender?.value||null,emergency_contact:fields.emergency_contact?.value.trim()||null};
+      if(!payload.full_name)throw new Error("Full name is required.");
+      const{error}=await supabase.from("vmc_profiles").update(payload).eq("id",userId);
+      if(error)throw error;
+      document.querySelectorAll("[data-portal-name]").forEach(e=>e.textContent=payload.full_name);
+      setNotice(notice,"Profile updated.");
+    }catch(e){setNotice(notice,e.message||"Could not update your profile.",true)}finally{if(button)button.disabled=false}
+  });
+  const upload=form.querySelector("[data-profile-upload]");
+  upload?.addEventListener("change",async()=>{
+    const file=upload.files?.[0],button=form.querySelector("[data-profile-upload-button]"),notice=$("[data-profile-photo-notice]");
+    if(!file)return;if(button)button.disabled=true;
+    try{const photo=await uploadMemberPhoto(userId,file,true);const src=await signedGalleryUrl(photo.storage_path);if(avatar&&src){avatar.src=src;avatar.hidden=false}setNotice(notice,"Profile picture updated.");}
+    catch(e){setNotice(notice,e.message||"Could not upload the profile picture.",true)}finally{upload.value="";if(button)button.disabled=false}
+  });
+}
+async function loadPhotosPage(userId){
+  const grid=$("[data-photo-grid]"),empty=$("[data-photo-empty]"),notice=$("[data-photo-notice]"),input=$("[data-gallery-upload]");if(!grid)return;
+  let rows=[];
+  const render=async()=>{
+    const{data,error}=await supabase.from("vmc_member_photos").select("id,member_id,storage_path,is_profile_photo,created_at").eq("member_id",userId).order("created_at",{ascending:false});
+    if(error)throw error;rows=data||[];grid.replaceChildren();if(empty)empty.hidden=rows.length>0;
+    for(const row of rows){const src=await signedGalleryUrl(row.storage_path);if(!src)continue;
+      const card=document.createElement("button");card.type="button";card.className="member-photo-card";card.dataset.photoId=row.id;card.setAttribute("aria-label","Open photo");
+      const img=document.createElement("img");img.src=src;img.alt="VMC member photo";img.loading="lazy";card.append(img);
+      if(row.is_profile_photo){const badge=document.createElement("span");badge.className="member-photo-badge";badge.textContent="Profile";card.append(badge)}
+      card.addEventListener("click",()=>openPhotoViewer(userId,row,src,render));grid.append(card);
+    }
+  };
+  input?.addEventListener("change",async()=>{
+    const file=input.files?.[0];if(!file)return;const button=$("[data-gallery-upload-button]");if(button)button.disabled=true;
+    try{await uploadMemberPhoto(userId,file,false);setNotice(notice,"Photo added to your gallery.");await render()}
+    catch(e){setNotice(notice,e.message||"Could not add that photo.",true)}finally{input.value="";if(button)button.disabled=false}
+  });
+  await render();
+}
+function openPhotoViewer(userId,row,src,refresh){
+  const modal=$("[data-photo-viewer]");if(!modal)return;const image=modal.querySelector("[data-viewer-image]"),profileButton=modal.querySelector("[data-make-profile]"),deleteButton=modal.querySelector("[data-delete-photo]"),closeButtons=modal.querySelectorAll("[data-close-viewer"]);
+  image.src=src;image.alt="VMC member photo";modal.hidden=false;document.body.classList.add("photo-viewer-open");
+  const close=()=>{modal.hidden=true;document.body.classList.remove("photo-viewer-open")};closeButtons.forEach(b=>b.onclick=close);
+  profileButton.onclick=async()=>{profileButton.disabled=true;try{const{error}=await supabase.rpc("vmc_set_profile_photo",{photo_id:row.id});if(error)throw error;close();await refresh()}catch(e){alert(e.message||"Could not set profile picture.")}finally{profileButton.disabled=false}};
+  deleteButton.onclick=async()=>{if(!confirm("Delete this photo from your VMC gallery?"))return;deleteButton.disabled=true;try{const{error}=await supabase.storage.from(GALLERY_BUCKET).remove([row.storage_path]);if(error)throw error;const{error:dbError}=await supabase.from("vmc_member_photos").delete().eq("id",row.id).eq("member_id",userId);if(dbError)throw dbError;if(row.is_profile_photo){await supabase.from("vmc_profiles").update({avatar_url:null}).eq("id",userId)}close();await refresh()}catch(e){alert(e.message||"Could not delete this photo.")}finally{deleteButton.disabled=false}};
+  modal.onclick=e=>{if(e.target===modal)close()};
 }
 async function countRows(t){const{count,error}=await supabase.from(t).select("*",{count:"exact",head:true});if(error)throw error;return count??0}
 async function loadManagementOverview(){const[m,p,a]=await Promise.all([countRows("vmc_profiles"),countRows("vmc_payments"),countRows("vmc_attendance")]);$("[data-member-count]")?.replaceChildren(document.createTextNode(String(m)));$("[data-payment-count]")?.replaceChildren(document.createTextNode(String(p)));$("[data-attendance-count]")?.replaceChildren(document.createTextNode(String(a)))}
