@@ -17,7 +17,8 @@
       <a href="#programs">Programs</a>
       <a href="#pricing">Pricing</a>
       <a href="#location">Location</a>
-      <a class="nav-action" href="#sign-in">Sign in</a>
+      <a class="nav-action" href="./auth/member-login.html">Member sign in</a>
+      <a class="nav-action" href="./auth/management-login.html">Management sign in</a>
     </nav>
   </header>
 
@@ -76,87 +77,29 @@
       </div>
     </section>
 
-    <section id="sign-in" class="section sign-in">
-      <div class="auth-card">
-        <div class="auth-heading">
-          <p class="eyebrow">MEMBER ACCESS</p>
-          <h2>Your VMC space.</h2>
-          <p>Sign in with your VMC username, registered email or phone number.</p>
-        </div>
-
-        <div class="auth-tabs" role="tablist" aria-label="Member access">
-          <button class="auth-tab is-active" type="button" data-auth-tab="login">Sign in</button>
-          <button class="auth-tab" type="button" data-auth-tab="register">Create account</button>
-        </div>
-
-        <form id="login-form" class="auth-form">
-          <label>
-            VMC username, email or phone
-            <input name="identifier" type="text" autocomplete="username" required>
-          </label>
-          <label>
-            Password
-            <input name="password" type="password" autocomplete="current-password" required>
-          </label>
-          <button class="button button-primary" type="submit">Sign in</button>
-          <p class="form-message" data-login-message role="status" aria-live="polite"></p>
-        </form>
-
-        <form id="register-form" class="auth-form" hidden>
-          <label>
-            Full name
-            <input name="full_name" type="text" autocomplete="name" maxlength="100" required>
-          </label>
-          <div class="form-grid">
-            <label>
-              Phone number
-              <input name="phone" type="tel" autocomplete="tel" placeholder="+265...">
-            </label>
-            <label>
-              Email address
-              <input name="email" type="email" autocomplete="email" placeholder="you@example.com">
-            </label>
+    <section class="section access-section">
+      <div class="section-heading">
+        <p class="eyebrow">VMC ACCESS</p>
+        <h2>Separate spaces for members and management.</h2>
+      </div>
+      <div class="access-grid">
+        <article class="access-card">
+          <p class="eyebrow">MEMBERS</p>
+          <h3>My VMC</h3>
+          <p>Access your membership, payments, attendance, profile and personal VMC information.</p>
+          <div class="actions">
+            <a class="button button-primary" href="./auth/member-login.html">Member sign in</a>
+            <a class="button button-secondary" href="./auth/member-register.html">Create account</a>
           </div>
-          <p class="form-hint">Provide at least one contact: phone or email.</p>
-          <button class="button button-primary" type="submit">Create VMC account</button>
-          <p class="form-message" data-register-message role="status" aria-live="polite"></p>
-        </form>
-
-        <section id="credentials-card" class="credentials-card" hidden aria-live="polite">
-          <p class="eyebrow">ACCOUNT CREATED</p>
-          <h3>Keep these details safe.</h3>
-          <p>Your VMC username and temporary password are shown once.</p>
-          <dl>
-            <div><dt>VMC username</dt><dd data-credential-username></dd></div>
-            <div><dt>Temporary password</dt><dd data-credential-password></dd></div>
-          </dl>
-          <button class="button button-secondary" type="button" data-use-credentials>Continue to sign in</button>
-        </section>
-
-        <section id="password-change-card" class="credentials-card" hidden>
-          <p class="eyebrow">FIRST SIGN-IN</p>
-          <h3>Set your own password.</h3>
-          <p>Your temporary password must be replaced before you continue.</p>
-          <form id="password-form" class="auth-form">
-            <label>
-              New password
-              <input name="password" type="password" minlength="8" autocomplete="new-password" required>
-            </label>
-            <label>
-              Confirm new password
-              <input name="confirm_password" type="password" minlength="8" autocomplete="new-password" required>
-            </label>
-            <button class="button button-primary" type="submit">Set password</button>
-            <p class="form-message" data-password-message role="status" aria-live="polite"></p>
-          </form>
-        </section>
-
-        <section id="member-session-card" class="credentials-card" hidden>
-          <p class="eyebrow">SIGNED IN</p>
-          <h3 data-member-name></h3>
-          <p>VMC username: <strong data-member-username></strong></p>
-          <button class="button button-secondary" type="button" data-sign-out>Sign out</button>
-        </section>
+        </article>
+        <article class="access-card">
+          <p class="eyebrow">MANAGEMENT</p>
+          <h3>Management Portal</h3>
+          <p>A separate operational workspace for authorised VMC staff, managers and owners.</p>
+          <div class="actions">
+            <a class="button button-primary" href="./auth/management-login.html">Management sign in</a>
+          </div>
+        </article>
       </div>
     </section>
   </main>
