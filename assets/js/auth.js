@@ -7,6 +7,36 @@ const supabase = createClient(VMC_CONFIG.supabaseUrl, VMC_CONFIG.supabasePublish
 const authUrl = `${VMC_CONFIG.supabaseUrl}/functions/v1/vmc-auth`;
 
 const $ = (selector) => document.querySelector(selector);
+
+function setupPasswordToggles() {
+  document.querySelectorAll('input[type="password"]').forEach((input) => {
+    if (input.closest(".password-field")) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "password-field";
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "password-toggle";
+    toggle.setAttribute("aria-label", "Show password");
+    toggle.setAttribute("aria-pressed", "false");
+    toggle.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.5"></circle></svg>';
+    wrapper.appendChild(toggle);
+
+    toggle.addEventListener("click", () => {
+      const showing = input.type === "text";
+      input.type = showing ? "password" : "text";
+      toggle.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+      toggle.setAttribute("aria-pressed", String(!showing));
+      toggle.innerHTML = showing
+        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.5"></circle></svg>'
+        : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18"></path><path d="M10.6 6.2A10.7 10.7 0 0 1 12 6c6 0 9.5 6 9.5 6a17.7 17.7 0 0 1-3.1 3.8"></path><path d="M6.1 6.1C3.7 7.9 2.5 12 2.5 12s3.5 6 9.5 6c1.2 0 2.3-.2 3.3-.6"></path><path d="M9.9 9.9a2.5 2.5 0 0 0 3.5 3.5"></path></svg>';
+    });
+  });
+}
+setupPasswordToggles();
 const message = (value, error = false) => {
   const el = $("[data-message]");
   if (!el) return;
