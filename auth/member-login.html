@@ -1,35 +1,8 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="VMC Xtreme member sign in.">
-  <title>Member Sign In — VMC Xtreme</title>
-  <link rel="stylesheet" href="../assets/css/app.css">
-  <link rel="stylesheet" href="../assets/css/portal.css">
-</head>
-<body class="portal-page">
-  <header class="portal-header">
-    <a class="portal-brand" href="../">VMC XTREME</a>
-    <a class="portal-back" href="../">VMC Xtreme Fitness</a>
-  </header>
-  <main class="auth-page">
-    <section class="auth-panel">
-      <p class="eyebrow">MEMBER ACCESS</p>
-      <h1>Sign in to your VMC account.</h1>
-      <p class="auth-intro">Use your VMC username, registered email address or phone number.</p>
-      <form id="member-login-form" class="auth-form">
-        <label>VMC username, email or phone<input name="identifier" autocomplete="username" required></label>
-        <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
-        <button class="button button-primary" type="submit">Sign in</button>
-        <p class="form-message" data-message role="status" aria-live="polite"></p>
-      </form>
-      <div class="auth-links">
-        <a href="./member-register.html">Create a VMC member account</a>
-        <a href="./management-login.html">Management sign in</a>
-      </div>
-    </section>
-  </main>
-  <script type="module" src="../assets/js/auth.js"></script>
-</body>
-</html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="VMC Xtreme member sign in."><title>Member Sign In — VMC Xtreme</title><link rel="stylesheet" href="../assets/css/app.css"><link rel="stylesheet" href="../assets/css/portal.css"></head>
+<body class="portal-page auth-screen member-auth-screen">
+<header class="auth-header"><a class="portal-brand" href="../"><img src="../assets/logo.png" alt="VMC Xtreme" width="44" height="44"><span>VMC XTREME</span></a><a class="portal-back" href="../">Back to VMC</a></header>
+<main class="auth-layout"><section class="auth-visual"><span class="eyebrow">MY VMC</span><h1>Your training.<br><strong>Your journey.</strong></h1><p>Stay connected to your membership, payments, attendance and VMC profile from one private space.</p><div class="auth-feature-row"><span>MEMBERSHIP</span><span>ATTENDANCE</span><span>PROGRESS</span></div></section>
+<section class="auth-panel"><div class="auth-panel-top"><span class="role-badge">MEMBER ACCESS</span><span>SECURE SIGN IN</span></div><h2>Welcome back.</h2><p class="auth-intro">Sign in with your VMC username, registered email or phone number.</p><form id="member-login-form" class="auth-form"><label>VMC username, email or phone<input name="identifier" autocomplete="username" required></label><label>Password<div class="password-field"><input name="password" type="password" autocomplete="current-password" required><button type="button" class="password-toggle" data-password-toggle aria-label="Show password">Show</button></div></label><button class="button button-primary auth-submit" type="submit">Enter My VMC <span>→</span></button><p class="form-message" data-message role="status" aria-live="polite"></p></form><div class="auth-links"><a href="./member-register.html">Create a VMC member account</a><a href="./management-login.html">Management sign in</a></div></section></main>
+<script type="module" src="../assets/js/auth.js"></script></body></html>
