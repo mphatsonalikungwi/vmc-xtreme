@@ -153,7 +153,7 @@ async function loadPhotosPage(userId){
   await render();
 }
 function openPhotoViewer(userId,row,src,refresh){
-  const modal=$("[data-photo-viewer]");if(!modal)return;const image=modal.querySelector("[data-viewer-image]"),profileButton=modal.querySelector("[data-make-profile]"),deleteButton=modal.querySelector("[data-delete-photo]"),closeButtons=modal.querySelectorAll("[data-close-viewer"]);
+  const modal=$("[data-photo-viewer]");if(!modal)return;const image=modal.querySelector("[data-viewer-image]"),profileButton=modal.querySelector("[data-make-profile]"),deleteButton=modal.querySelector("[data-delete-photo]"),closeButtons=modal.querySelectorAll("[data-close-viewer]"));
   image.src=src;image.alt="VMC member photo";modal.hidden=false;document.body.classList.add("photo-viewer-open");
   const close=()=>{modal.hidden=true;document.body.classList.remove("photo-viewer-open")};closeButtons.forEach(b=>b.onclick=close);
   profileButton.onclick=async()=>{profileButton.disabled=true;try{const{error}=await supabase.rpc("vmc_set_profile_photo",{photo_id:row.id});if(error)throw error;close();await refresh()}catch(e){alert(e.message||"Could not set profile picture.")}finally{profileButton.disabled=false}};
