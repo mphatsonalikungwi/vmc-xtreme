@@ -63,7 +63,7 @@ async function loadAttendancePage(userId){
   const now=new Date(), monthKey=now.toISOString().slice(0,7);
   const monthRows=list.filter(r=>new Date(r.checked_in_at).toISOString().slice(0,7)===monthKey);
   const sorted=[...dates].sort().reverse(); let streak=0;
-  for(let i=0;i<sorted.length;i++){const d=new Date(sorted[i]+"T00:00:00");const expected=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i);if(d.getFullYear()===expected.getFullYear()&&d.getMonth()===expected.getMonth()&&d.getDate()===expected.getDate())streak++;else break}
+  if(sorted.length){const first=new Date(sorted[0]+"T00:00:00");const todayOnly=new Date(now.getFullYear(),now.getMonth(),now.getDate());const gap=Math.round((todayOnly-first)/86400000);if(gap<=1){for(let i=0;i<sorted.length;i++){const d=new Date(sorted[i]+"T00:00:00");const expected=new Date(first.getFullYear(),first.getMonth(),first.getDate()-i);if(d.getTime()===expected.getTime())streak++;else break}}}
   const {data:membership}=await supabase.from("vmc_memberships").select("start_date,end_date,status").eq("member_id",userId).order("created_at",{ascending:false}).limit(1).maybeSingle();
   const membershipRows=membership?.start_date?list.filter(r=>{const d=new Date(r.checked_in_at);return d>=new Date(membership.start_date+"T00:00:00")&&(!membership.end_date||d<=new Date(membership.end_date+"T23:59:59"))}):[];
   $("[data-att-total]")?.replaceChildren(document.createTextNode(String(list.length)));
@@ -71,10 +71,11 @@ async function loadAttendancePage(userId){
   $("[data-att-streak]")?.replaceChildren(document.createTextNode(String(streak)));
   $("[data-att-membership]")?.replaceChildren(document.createTextNode(String(membershipRows.length)));
   renderAttendanceCalendar(dates);
-  const body=$("[data-att-history]"); if(body){body.replaceChildren();if(!list.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=4;td.textContent="No attendance recorded yet.";tr.append(td);body.append(tr)}else list.forEach(r=>{const tr=document.createElement("tr");[formatDateTime(r.checked_in_at),formatDateTime(r.checked_out_at),r.recorded_by?"VMC staff":"VMC"].forEach((v,i)=>{if(i===0){const td=document.createElement("td");td.textContent=v;tr.append(td)}else if(i===1){const td=document.createElement("td");td.textContent=v;tr.append(td)}else{const td=document.createElement("td");td.textContent=v;tr.append(td)}});body.append(tr)})}
+  const body=$("[data-att-history]"); if(body){body.replaceChildren();if(!list.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=4;td.textContent="No attendance recorded yet.";tr.append(td);body.append(tr)}else list.forEach(r=>{const tr=document.createElement("tr");[formatDate(r.checked_in_at),formatTime(r.checked_in_at),formatTime(r.checked_out_at),r.recorded_by?"VMC staff":"VMC"].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.append(td)});body.append(tr)})}
   $("[data-att-note]")?.replaceChildren(document.createTextNode(list.length?"Attendance is read directly from your VMC check-in records.":"Your attendance history will appear after your first recorded check-in."));
 }
 let calendarDate=new Date();
+function formatTime(v){if(!v)return"—";const d=new Date(v);return Number.isNaN(d.getTime())?v:new Intl.DateTimeFormat("en-MW",{hour:"numeric",minute:"2-digit"}).format(d)}
 function formatDateTime(v){if(!v)return"—";const d=new Date(v);return Number.isNaN(d.getTime())?v:new Intl.DateTimeFormat("en-MW",{day:"numeric",month:"short",year:"numeric",hour:"numeric",minute:"2-digit"}).format(d)}
 function renderAttendanceCalendar(dates){
   const root=$("[data-attendance-calendar]");if(!root)return;
