@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="VMC Xtreme management portal sign in.">
+  <title>Management Sign In — VMC Xtreme</title>
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <link rel="stylesheet" href="../assets/css/portal.css">
+</head>
+<body class="portal-page">
+  <header class="portal-header">
+    <a class="portal-brand" href="../">VMC XTREME</a>
+    <a class="portal-back" href="../">VMC Xtreme Fitness</a>
+  </header>
+  <main class="auth-page">
+    <section class="auth-panel">
+      <p class="eyebrow">MANAGEMENT ACCESS</p>
+      <h1>Management sign in.</h1>
+      <p class="auth-intro">For authorised VMC staff, managers and owners.</p>
+      <form id="management-login-form" class="auth-form" data-management-login>
+        <label>VMC username, email or phone<input name="identifier" autocomplete="username" required></label>
+        <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+        <button class="button button-primary" type="submit">Sign in to management</button>
+        <p class="form-message" data-message role="status" aria-live="polite"></p>
+      </form>
+      <div class="auth-links">
+        <a href="./member-login.html">Member sign in</a>
+        <a href="../">Return to VMC Xtreme</a>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="../assets/js/auth.js"></script>
+</body>
+</html>
