@@ -128,13 +128,29 @@ $("#password-form")?.addEventListener("submit", async (event) => {
   event.preventDefault();
   message("Saving your new password…");
   const form = new FormData(event.currentTarget);
+  const currentPassword = String(form.get("current_password") || "");
   const password = String(form.get("password") || "");
   const confirm = String(form.get("confirm_password") || "");
+  if (!currentPassword) return message("Enter your current password.", true);
   if (password.length < 8) return message("Password must be at least 8 characters.", true);
   if (password !== confirm) return message("Passwords do not match.", true);
+  if (currentPassword === password) return message("Your new password must be different from your current password.", true);
 
   const { data: sessionData } = await supabase.auth.getSession();
   if (!sessionData.session) return go("./member-login.html");
+
+  const { data: profile, error: profileError } = await supabase.from("vmc_profiles")
+    .select("email,phone").eq("id", sessionData.session.user.id).single();
+  if (profileError || !profile) return message("We could not verify your account identity. Please sign in again.", true);
+
+  const identity = profile.email || profile.phone;
+  if (!identity) return message("No sign-in identity is available for this account. Please contact VMC.", true);
+
+  const { error: verifyError } = await supabase.auth.signInWithPassword({
+    [profile.email ? "email" : "phone"]: identity,
+    password: currentPassword
+  });
+  if (verifyError) return message("The current password is incorrect.", true);
 
   const { error } = await supabase.auth.updateUser({ password });
   if (error) return message(error.message, true);
