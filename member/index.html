@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="VMC Xtreme member portal.">
+  <title>My VMC — VMC Xtreme</title>
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <link rel="stylesheet" href="../assets/css/portal.css">
+</head>
+<body class="portal-page">
+  <header class="portal-header">
+    <a class="portal-brand" href="../">VMC XTREME</a>
+    <div class="portal-user">
+      <span data-portal-name></span>
+      <button type="button" class="portal-button" data-sign-out>Sign out</button>
+    </div>
+  </header>
+  <main class="portal-shell">
+    <aside class="portal-sidebar" aria-label="Member portal">
+      <p class="portal-label">MY VMC</p>
+      <nav class="portal-nav">
+        <a class="is-active" href="./">Overview</a>
+        <a href="./profile.html">My Profile</a>
+        <a href="./membership.html">Membership</a>
+        <a href="./payments.html">Payments</a>
+        <a href="./attendance.html">Attendance</a>
+        <a href="./photos.html">Photos</a>
+      </nav>
+    </aside>
+    <section class="portal-content">
+      <div class="portal-heading">
+        <p class="eyebrow">MEMBER PORTAL</p>
+        <h1>Welcome back, <span data-portal-name></span>.</h1>
+        <p>Your VMC account, membership and activity in one place.</p>
+      </div>
+      <div class="portal-grid">
+        <article class="portal-card"><span class="card-label">ACCOUNT</span><h2 data-portal-username>—</h2><p>VMC username</p></article>
+        <article class="portal-card"><span class="card-label">MEMBERSHIP</span><h2 data-membership-status>—</h2><p data-membership-detail>Membership status</p></article>
+        <article class="portal-card portal-card-wide"><span class="card-label">NEXT</span><h2>Keep your VMC record current.</h2><p>Update your profile, review membership information and keep payment records available to the team.</p><a class="text-link" href="./profile.html">Open My Profile</a></article>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="../assets/js/portal.js"></script>
+</body>
+</html>
