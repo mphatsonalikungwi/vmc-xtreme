@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Create a VMC Xtreme member account.">
+  <title>Create Member Account — VMC Xtreme</title>
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <link rel="stylesheet" href="../assets/css/portal.css">
+</head>
+<body class="portal-page">
+  <header class="portal-header">
+    <a class="portal-brand" href="../">VMC XTREME</a>
+    <a class="portal-back" href="../">VMC Xtreme Fitness</a>
+  </header>
+  <main class="auth-page">
+    <section class="auth-panel">
+      <p class="eyebrow">MEMBER REGISTRATION</p>
+      <h1>Create your VMC account.</h1>
+      <p class="auth-intro">Your VMC username and temporary password are generated securely when the account is created.</p>
+      <form id="member-register-form" class="auth-form">
+        <label>Full name<input name="full_name" autocomplete="name" maxlength="100" required></label>
+        <div class="form-grid">
+          <label>Phone number<input name="phone" type="tel" autocomplete="tel" placeholder="+265..."></label>
+          <label>Email address<input name="email" type="email" autocomplete="email" placeholder="you@example.com"></label>
+        </div>
+        <p class="form-hint">Provide at least one contact: phone or email.</p>
+        <button class="button button-primary" type="submit">Create member account</button>
+        <p class="form-message" data-message role="status" aria-live="polite"></p>
+      </form>
+      <section id="credentials-card" class="credentials-card" hidden>
+        <p class="eyebrow">ACCOUNT CREATED</p>
+        <h2>Your VMC sign-in details.</h2>
+        <p>Save these details before leaving this page. The temporary password will not be shown again.</p>
+        <dl>
+          <div><dt>VMC username</dt><dd data-credential-username></dd></div>
+          <div><dt>Temporary password</dt><dd data-credential-password></dd></div>
+        </dl>
+        <a class="button button-primary" href="./member-login.html">Continue to member sign in</a>
+      </section>
+      <div class="auth-links"><a href="./member-login.html">Already have an account? Sign in</a></div>
+    </section>
+  </main>
+  <script type="module" src="../assets/js/auth.js"></script>
+</body>
+</html>
