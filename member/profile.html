@@ -1,5 +1,28 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>My Profile — My VMC</title><link rel="stylesheet" href="../assets/css/app.css"><link rel="stylesheet" href="../assets/css/portal.css"></head>
-<body class="portal-page"><header class="portal-header"><a class="portal-brand" href="../">VMC XTREME</a><div class="portal-user"><span data-portal-name></span><button class="portal-button" type="button" data-sign-out>Sign out</button></div></header>
-<main class="portal-shell"><aside class="portal-sidebar"><p class="portal-label">MY VMC</p><nav class="portal-nav"><a href="./">Overview</a><a class="is-active" href="./profile.html"> My Profile</a><a href="./membership.html">Membership</a><a href="./payments.html">Payments</a><a href="./attendance.html">Attendance</a><a href="./photos.html">Photos</a></nav></aside>
-<section class="portal-content"><div class="portal-heading"><p class="eyebrow">MY VMC</p><h1>My Profile</h1><p>Your personal VMC information and account security.</p></div><article class="portal-card portal-card-wide"><span class="card-label">MODULE</span><h2>Profile details and account security are handled here.</h2><p>This area is protected by the VMC member session and row-level access controls.</p></article></section></main><script type="module" src="../assets/js/portal.js"></script></body></html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Profile — My VMC</title><link rel="stylesheet" href="../assets/css/app.css"><link rel="stylesheet" href="../assets/css/portal.css"></head>
+<body class="portal-page member-portal-page">
+<header class="portal-header"><a class="portal-brand" href="../">VMC XTREME</a><div class="portal-header-actions"><span class="portal-user-name" data-portal-name></span><button type="button" class="portal-button portal-menu-button" data-menu-toggle aria-controls="member-nav" aria-expanded="false">☰ <span>Menu</span></button><button type="button" class="portal-button portal-signout" data-sign-out>Sign out</button></div></header>
+<div class="portal-overlay" data-menu-overlay hidden></div>
+<main class="portal-shell"><aside class="portal-sidebar" id="member-nav" aria-label="Member portal navigation"><div class="portal-sidebar-head"><div><p class="portal-label">MY VMC</p><p class="portal-sidebar-title">Member space</p></div><button type="button" class="portal-close-button" data-menu-close aria-label="Close navigation">×</button></div>
+<nav class="portal-nav"><a href="./"><span>Home</span><small>Overview</small></a><a href="./membership.html"><span>Membership</span><small>Your plan</small></a><a href="./payments.html"><span>Payments</span><small>History</small></a><a href="./attendance.html"><span>Attendance</span><small>Your visits</small></a><a class="is-active" href="./profile.html" aria-current="page"><span>My VMC Profile</span><small>Personal space</small></a><a href="./photos.html"><span>Photos</span><small>Your gallery</small></a><a href="./settings.html"><span>Settings</span><small>Account & security</small></a></nav>
+<div class="portal-sidebar-footer"><span class="role-badge">MEMBER</span><button type="button" class="portal-sidebar-signout" data-sign-out>Sign out</button></div></aside>
+<section class="portal-content"><div class="portal-heading"><p class="eyebrow">MY VMC PROFILE</p><h1>Your profile.</h1><p>Keep your VMC information current and make your member space yours.</p></div>
+<div class="profile-page-grid">
+<article class="portal-card profile-identity-card"><div class="profile-photo-large"><img data-profile-page-avatar alt="Profile picture" hidden><span data-profile-page-initials>V</span></div><span class="card-label">PROFILE PICTURE</span><h2 data-portal-name>Member</h2><p class="profile-username" data-profile-username>—</p><label class="portal-upload-button" for="profile-upload">Change profile picture</label><input id="profile-upload" class="visually-hidden-file" type="file" accept="image/jpeg,image/png,image/webp" data-profile-upload><p class="portal-note" data-profile-photo-notice hidden></p><a class="text-link" href="./photos.html">Open photo gallery →</a></article>
+<article class="portal-card profile-form-card"><div class="card-topline"><span class="card-label">PERSONAL INFORMATION</span><span class="role-badge">MEMBER</span></div>
+<form data-profile-form class="profile-form" novalidate>
+<div class="profile-form-grid">
+<label><span>Full name</span><input name="full_name" type="text" autocomplete="name" required></label>
+<label><span>Phone</span><input name="phone" type="tel" autocomplete="tel"></label>
+<label><span>Email</span><input name="email" type="email" autocomplete="email"></label>
+<label><span>Date of birth</span><input name="date_of_birth" type="date"></label>
+<label><span>Gender</span><select name="gender"><option value="">Prefer not to say</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></label>
+<label><span>Emergency contact</span><input name="emergency_contact" type="tel" autocomplete="tel"></label>
+</div>
+<div class="profile-account-strip"><div><span class="card-label">VMC USERNAME</span><strong data-profile-username>—</strong></div><a class="text-link" href="./settings.html">Account & security →</a></div>
+<button class="portal-primary-button" type="submit">Save profile</button><p class="portal-form-notice" data-profile-form-notice hidden></p>
+</form></article></div>
+<section class="portal-section"><div class="section-heading"><div><span class="card-label">YOUR PHOTOS</span><h2>Your VMC gallery</h2></div><a class="text-link" href="./photos.html">Manage gallery →</a></div>
+<div class="portal-card profile-gallery-teaser"><div><h3>Keep your training journey close.</h3><p>Your gallery is private to your VMC account. Open any photo to make it your profile picture or delete it.</p></div><a class="portal-primary-link" href="./photos.html">Open gallery <span>→</span></a></div></section>
+</section></main><script type="module" src="../assets/js/portal.js"></script></body></html>
