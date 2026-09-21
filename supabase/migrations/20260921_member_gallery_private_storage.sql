@@ -25,3 +25,5 @@ end;
 $$;
 revoke all on function public.vmc_set_profile_photo(uuid) from public;
 grant execute on function public.vmc_set_profile_photo(uuid) to authenticated;
+-- Keep migration state aligned with the live policy set.
+drop policy if exists "vmc_profiles_update_self" on public.vmc_profiles;
