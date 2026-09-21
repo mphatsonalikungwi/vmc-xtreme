@@ -1,3 +1,1 @@
-import "./config.js";
-
-document.documentElement.dataset.vmcReady = "true";
+const menuButton=document.querySelector("[data-site-menu-toggle]");const navShell=document.querySelector("[data-site-nav-shell]");if(menuButton&&navShell){const close=()=>{navShell.classList.remove("is-open");menuButton.setAttribute("aria-expanded","false");menuButton.setAttribute("aria-label","Open navigation")};menuButton.addEventListener("click",()=>{const open=!navShell.classList.contains("is-open");navShell.classList.toggle("is-open",open);menuButton.setAttribute("aria-expanded",String(open));menuButton.setAttribute("aria-label",open?"Close navigation":"Open navigation")});navShell.querySelectorAll("a").forEach(link=>link.addEventListener("click",close))}document.documentElement.dataset.vmcReady="true";
