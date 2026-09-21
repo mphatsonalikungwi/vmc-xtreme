@@ -69,7 +69,7 @@ function renderDashboardIntelligence(m,attendance,payments,notifications){
   if(payment){
     const state=titleCase(payment.status);
     paymentState?.replaceChildren(document.createTextNode(state));
-    paymentState?.dataset.status=payment.status;
+    if(paymentState)paymentState.dataset.status=payment.status;
     paymentDetail?.replaceChildren(document.createTextNode(formatMoney(payment.amount)+" · "+titleCase(payment.payment_method)+" · "+formatDate(payment.payment_date)));
   }else{
     paymentState?.replaceChildren(document.createTextNode("No payment"));
