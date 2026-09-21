@@ -99,19 +99,26 @@ $("[data-management-login]")?.addEventListener("submit", async (event) => {
 
 $("#member-register-form")?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  message("Creating your account…");
+  message("Creating your account and submitting your membership…");
   const form = new FormData(event.currentTarget);
+  const password = String(form.get("password") || "");
+  const confirmPassword = String(form.get("confirm_password") || "");
+  if (password !== confirmPassword) return message("Passwords do not match.", true);
   try {
     const data = await authRequest("register", {
-      full_name: form.get("full_name"),
-      phone: form.get("phone"),
-      email: form.get("email")
+      full_name: form.get("full_name"), password,
+      phone: form.get("phone"), email: form.get("email"),
+      emergency_contact: form.get("emergency_contact"), gender: form.get("gender"),
+      date_of_birth: form.get("date_of_birth"), training_mode: form.get("training_mode"),
+      duration_count: Number(form.get("duration_count")), duration_unit: form.get("duration_unit"),
+      session_type: form.get("session_type"), payment_method: form.get("payment_method"),
+      payment_reference: form.get("payment_reference")
     });
     $("[data-credential-username]").textContent = data.username;
     $("[data-credential-password]").textContent = data.temporary_password;
-    $("#credentials-card").hidden = false;
-    event.currentTarget.hidden = true;
-    message("Account created. Save the credentials shown below.");
+    $("#registration-shell").hidden = true;
+    $("#registration-success").hidden = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (error) {
     message(error.message, true);
   }
@@ -142,3 +149,27 @@ $("#password-form")?.addEventListener("submit", async (event) => {
 
 const { data: initialSession } = await supabase.auth.getSession();
 if ($("#password-form") && !initialSession.session) go("./member-login.html");
+
+const registrationForm = $("#member-register-form");
+const pricePreview = $("#price-preview");
+const priceExplanation = $("#price-explanation");
+const referenceInput = registrationForm?.querySelector('[name="payment_reference"]');
+const paymentMethodInput = registrationForm?.querySelector('[name="payment_method"]');
+const basePrices = { day: { single: 2000, double: 3000 }, week: { single: 8000, double: 10000 }, month: { single: 30000, double: 35000 } };
+function updateRegistrationPrice() {
+  if (!registrationForm || !pricePreview) return;
+  const count = Math.max(1, Number(registrationForm.duration_count.value || 1));
+  const unit = registrationForm.duration_unit.value;
+  const session = registrationForm.querySelector('input[name="session_type"]:checked')?.value || "single";
+  const amount = (basePrices[unit]?.[session] || 0) * count;
+  pricePreview.textContent = `K${amount.toLocaleString("en-MW")}`;
+  priceExplanation.textContent = `${count} ${unit}${count === 1 ? "" : "s"} · ${session === "single" ? "Single" : "Double"} sessions`;
+}
+registrationForm?.addEventListener("input", updateRegistrationPrice);
+registrationForm?.addEventListener("change", updateRegistrationPrice);
+paymentMethodInput?.addEventListener("change", () => {
+  const digital = paymentMethodInput.value !== "Cash";
+  referenceInput.required = digital;
+  referenceInput.placeholder = digital ? "Transaction / receipt reference" : "Optional cash receipt / note";
+});
+updateRegistrationPrice();
