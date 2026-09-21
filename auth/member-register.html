@@ -1,46 +1,49 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Create a VMC Xtreme member account.">
-  <title>Create Member Account — VMC Xtreme</title>
-  <link rel="stylesheet" href="../assets/css/app.css">
-  <link rel="stylesheet" href="../assets/css/portal.css">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Join VMC Xtreme Fitness."><title>Join VMC Xtreme — Member Registration</title>
+<link rel="stylesheet" href="../assets/css/app.css"><link rel="stylesheet" href="../assets/css/portal.css">
 </head>
-<body class="portal-page">
-  <header class="portal-header">
-    <a class="portal-brand" href="../">VMC XTREME</a>
-    <a class="portal-back" href="../">VMC Xtreme Fitness</a>
-  </header>
-  <main class="auth-page">
-    <section class="auth-panel">
-      <p class="eyebrow">MEMBER REGISTRATION</p>
-      <h1>Create your VMC account.</h1>
-      <p class="auth-intro">Your VMC username and temporary password are generated securely when the account is created.</p>
-      <form id="member-register-form" class="auth-form">
-        <label>Full name<input name="full_name" autocomplete="name" maxlength="100" required></label>
-        <div class="form-grid">
-          <label>Phone number<input name="phone" type="tel" autocomplete="tel" placeholder="+265..."></label>
-          <label>Email address<input name="email" type="email" autocomplete="email" placeholder="you@example.com"></label>
-        </div>
-        <p class="form-hint">Provide at least one contact: phone or email.</p>
-        <button class="button button-primary" type="submit">Create member account</button>
-        <p class="form-message" data-message role="status" aria-live="polite"></p>
-      </form>
-      <section id="credentials-card" class="credentials-card" hidden>
-        <p class="eyebrow">ACCOUNT CREATED</p>
-        <h2>Your VMC sign-in details.</h2>
-        <p>Save these details before leaving this page. The temporary password will not be shown again.</p>
-        <dl>
-          <div><dt>VMC username</dt><dd data-credential-username></dd></div>
-          <div><dt>Temporary password</dt><dd data-credential-password></dd></div>
-        </dl>
-        <a class="button button-primary" href="./member-login.html">Continue to member sign in</a>
-      </section>
-      <div class="auth-links"><a href="./member-login.html">Already have an account? Sign in</a></div>
-    </section>
-  </main>
-  <script type="module" src="../assets/js/auth.js"></script>
-</body>
-</html>
+<body class="portal-page registration-page">
+<header class="portal-header"><a class="portal-brand" href="../">VMC XTREME</a><a class="portal-back" href="../">Back to VMC Xtreme</a></header>
+<main class="registration-main">
+<section class="registration-shell" id="registration-shell">
+<div class="registration-intro"><p class="eyebrow">BECOME A VMC MEMBER</p><h1>Start your VMC journey.</h1><p>Tell us a little about you, choose how you want to train, and submit your payment details. Your membership will be reviewed by VMC before activation.</p></div>
+<form id="member-register-form" class="registration-form">
+<section class="registration-section"><div class="registration-section-heading"><span>01</span><div><h2>Your details</h2><p>Information VMC uses to create and manage your member account.</p></div></div>
+<div class="registration-grid">
+<label class="field field-wide">Full name <span class="required">*</span><input name="full_name" autocomplete="name" maxlength="120" placeholder="e.g. Mphatso Nalikungwi" required></label>
+<label class="field">Mobile number <span class="required">*</span><input name="phone" type="tel" autocomplete="tel" placeholder="+265 991 203 382" required><small>Needed as a secure login identity when email is not provided.</small></label>
+<label class="field">Email address <span class="optional">Optional</span><input name="email" type="email" autocomplete="email" placeholder="you@example.com"></label>
+<label class="field">Emergency contact <span class="required">*</span><input name="emergency_contact" maxlength="120" placeholder="Name + phone number" required></label>
+<label class="field">Gender <span class="optional">Optional</span><select name="gender"><option value="">Prefer not to say</option><option>Female</option><option>Male</option><option>Other</option></select></label>
+<label class="field">Date of birth <span class="optional">Optional</span><input name="date_of_birth" type="date"></label>
+<label class="field">Password <span class="required">*</span><input name="password" type="password" minlength="8" maxlength="72" autocomplete="new-password" placeholder="Minimum 8 characters" required><small>This is your temporary password. You will be asked to change it after your first login.</small></label>
+<label class="field">Confirm password <span class="required">*</span><input name="confirm_password" type="password" minlength="8" maxlength="72" autocomplete="new-password" placeholder="Enter it again" required></label>
+</div></section>
+<section class="registration-section"><div class="registration-section-heading"><span>02</span><div><h2>Build your membership</h2><p>Choose your training focus, duration and session access.</p></div></div>
+<div class="registration-grid">
+<label class="field field-wide">Training mode <span class="required">*</span><select name="training_mode" required><option value="">Choose your training focus</option><option>Personal Training</option><option>Cardio Training</option><option>Muscle Building &amp; Toning</option><option>Weight Loss</option><option>Group Fitness</option><option>Beginner Guidance</option></select></label>
+<label class="field">Duration <span class="required">*</span><input name="duration_count" type="number" min="1" max="3650" value="1" required></label>
+<label class="field">Duration unit <span class="required">*</span><select name="duration_unit" required><option value="day">Day(s)</option><option value="week">Week(s)</option><option value="month" selected>Month(s)</option></select></label>
+<fieldset class="field field-wide session-choice"><legend>Session access <span class="required">*</span></legend><div class="choice-grid"><label><input type="radio" name="session_type" value="single" checked><span><strong>Single</strong><small>One session per day</small></span></label><label><input type="radio" name="session_type" value="double"><span><strong>Double</strong><small>Two sessions per day</small></span></label></div></fieldset>
+</div>
+<div class="price-preview"><span>Estimated membership</span><strong id="price-preview">K30,000</strong><small id="price-explanation">1 month · Single sessions</small></div>
+</section>
+<section class="registration-section"><div class="registration-section-heading"><span>03</span><div><h2>Payment details</h2><p>Submit the payment you have made. VMC will verify it before activation.</p></div></div>
+<div class="registration-grid">
+<label class="field">Payment method <span class="required">*</span><select name="payment_method" required><option value="">Choose a payment method</option><option>Airtel Money</option><option>TNM Mpamba</option><option>National Bank</option><option>Cash</option></select></label>
+<label class="field">Payment reference <span class="optional" id="reference-optional">Required for digital payments</span><input name="payment_reference" maxlength="120" placeholder="Transaction / receipt reference"></label>
+</div></section>
+<div class="registration-actions"><p class="form-message" data-message role="status" aria-live="polite"></p><button class="button button-primary button-large" type="submit">Create my VMC account</button><p class="form-hint">Your registration and payment details will be submitted to VMC for review.</p></div>
+</form></section>
+<section id="registration-success" class="registration-success" hidden>
+<div class="success-mark">✓</div><p class="eyebrow">WELCOME TO VMC</p><h1>Your VMC account is ready.</h1><p class="success-lead">Your registration has been received and your membership is now <strong>under VMC payment review</strong>.</p>
+<div class="success-grid"><article class="success-card"><span>YOUR VMC USERNAME</span><strong data-credential-username></strong><small>Use this username whenever you sign in.</small></article><article class="success-card"><span>TEMPORARY PASSWORD</span><strong data-credential-password></strong><small>Keep it private. You will be required to change it after your first login.</small></article></div>
+<div class="login-guide"><div><span>01</span><p><strong>Go to Member Sign In</strong><br>Use your VMC username and the temporary password above.</p></div><div><span>02</span><p><strong>Change your password</strong><br>Your first sign-in will take you through account security setup.</p></div><div><span>03</span><p><strong>Wait for verification</strong><br>VMC will review your payment and activate your membership once verified.</p></div></div>
+<div class="success-actions"><a class="button button-primary button-large" href="./member-login.html">Continue to Member Sign In</a><a class="button button-secondary" href="../">Return to VMC Xtreme</a></div>
+</section>
+</main>
+<script type="module" src="../assets/js/auth.js"></script>
+</body></html>
