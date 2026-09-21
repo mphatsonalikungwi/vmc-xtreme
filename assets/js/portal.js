@@ -1,95 +1,23 @@
 import { createClient } from "https://unpkg.com/@supabase/supabase-js@2.116.0/+esm";
 import { VMC_CONFIG } from "./config.js";
-
-const supabase = createClient(VMC_CONFIG.supabaseUrl, VMC_CONFIG.supabasePublishableKey, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-});
-
-const $ = (selector) => document.querySelector(selector);
-
-const pageType = document.body.classList.contains("management-page") ? "management" : "member";
-const allowedRoles = pageType === "management" ? ["staff", "manager", "owner"] : ["member"];
-
-async function loadPortal() {
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData.session) {
-    window.location.href = pageType === "management" ? "../auth/management-login.html" : "../auth/member-login.html";
-    return;
-  }
-
-  const userId = sessionData.session.user.id;
-  const { data: profile, error: profileError } = await supabase.from("vmc_profiles")
-    .select("id,full_name,username,must_change_password,account_status")
-    .eq("id", userId).single();
-
-  if (profileError || !profile || profile.account_status !== "active") {
-    await supabase.auth.signOut();
-    window.location.href = pageType === "management" ? "../auth/management-login.html" : "../auth/member-login.html";
-    return;
-  }
-
-  if (profile.must_change_password) {
-    window.location.href = `../auth/change-password.html?next=${encodeURIComponent(pageType === "management" ? "../management/" : "../member/")}`;
-    return;
-  }
-
-  const { data: roleRows, error: roleError } = await supabase.from("vmc_user_roles")
-    .select("role:vmc_roles(name)").eq("user_id", userId);
-  if (roleError) throw roleError;
-
-  const roles = (roleRows || []).map((row) => row.role?.name).filter(Boolean);
-  const activeRole = roles.find((role) => allowedRoles.includes(role));
-
-  if (!activeRole) {
-    await supabase.auth.signOut();
-    window.location.href = pageType === "management" ? "../auth/management-login.html" : "../auth/member-login.html";
-    return;
-  }
-
-  document.querySelectorAll("[data-portal-name]").forEach((el) => { el.textContent = profile.full_name; });
-  document.querySelectorAll("[data-portal-username]").forEach((el) => { el.textContent = profile.username || "Not assigned"; });
-  document.querySelectorAll("[data-portal-role]").forEach((el) => { el.textContent = activeRole.toUpperCase(); });
-
-  if (pageType === "member") await loadMemberOverview(userId);
-  if (pageType === "management") await loadManagementOverview();
-}
-
-async function loadMemberOverview(userId) {
-  const { data } = await supabase.from("vmc_memberships")
-    .select("status,start_date,end_date,plan:vmc_membership_plans(name,duration_unit,duration_count,session_type,price)")
-    .eq("member_id", userId)
-    .order("created_at", { ascending: false }).limit(1).maybeSingle();
-
-  const status = $("[data-membership-status]");
-  const detail = $("[data-membership-detail]");
-  if (!status || !detail) return;
-  status.textContent = data?.status ? data.status.replaceAll("_", " ").toUpperCase() : "NOT SET";
-  detail.textContent = data?.end_date ? `Valid until ${data.end_date}` : "No active membership recorded";
-}
-
-async function countRows(table) {
-  const { count, error } = await supabase.from(table).select("*", { count: "exact", head: true });
-  if (error) throw error;
-  return count ?? 0;
-}
-
-async function loadManagementOverview() {
-  const [members, payments, attendance] = await Promise.all([
-    countRows("vmc_profiles"),
-    countRows("vmc_payments"),
-    countRows("vmc_attendance")
-  ]);
-  $("[data-member-count]")?.replaceChildren(document.createTextNode(String(members)));
-  $("[data-payment-count]")?.replaceChildren(document.createTextNode(String(payments)));
-  $("[data-attendance-count]")?.replaceChildren(document.createTextNode(String(attendance)));
-}
-
-$("[data-sign-out]")?.addEventListener("click", async () => {
-  await supabase.auth.signOut();
-  window.location.href = pageType === "management" ? "../auth/management-login.html" : "../auth/member-login.html";
-});
-
-loadPortal().catch(async () => {
-  await supabase.auth.signOut();
-  window.location.href = pageType === "management" ? "../auth/management-login.html" : "../auth/member-login.html";
-});
+const supabase=createClient(VMC_CONFIG.supabaseUrl,VMC_CONFIG.supabasePublishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const $=s=>document.querySelector(s);
+const pageType=document.body.classList.contains("management-page")?"management":"member";
+const allowedRoles=pageType==="management"?["staff","manager","owner"]:["member"];
+const loginPath=pageType==="management"?"../auth/management-login.html":"../auth/member-login.html";
+const text=v=>v==null?"":String(v);
+function formatDate(v){if(!v)return"—";const d=new Date(v+(v.length===10?"T00:00:00":""));return Number.isNaN(d.getTime())?v:new Intl.DateTimeFormat("en-MW",{day:"numeric",month:"short",year:"numeric"}).format(d)}
+function formatMoney(v){return v==null?"—":"K"+Number(v).toLocaleString("en-MW")}
+function titleCase(v){return text(v).replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase())}
+function initials(name){const p=text(name).trim().split(/\s+/).filter(Boolean);return(p.slice(0,2).map(x=>x[0]).join("")||"V").toUpperCase()}
+function setupMenu(){const sidebar=$("#member-nav"),overlay=$("[data-menu-overlay]"),toggle=$("[data-menu-toggle]");if(!sidebar||!toggle)return;const setOpen=open=>{sidebar.classList.toggle("is-open",open);if(overlay)overlay.toggleAttribute("hidden",!open);toggle.setAttribute("aria-expanded",String(open));document.body.classList.toggle("portal-menu-open",open)};toggle.addEventListener("click",()=>setOpen(!sidebar.classList.contains("is-open")));document.querySelectorAll("[data-menu-close]").forEach(b=>b.addEventListener("click",()=>setOpen(false)));overlay?.addEventListener("click",()=>setOpen(false));sidebar.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>setOpen(false)))}
+async function loadPortal(){setupMenu();const{data:userData,error:userError}=await supabase.auth.getUser();if(userError||!userData.user){location.href=loginPath;return}const userId=userData.user.id;const{data:profile,error:profileError}=await supabase.from("vmc_profiles").select("id,full_name,username,phone,email,avatar_url,must_change_password,account_status").eq("id",userId).single();if(profileError||!profile||profile.account_status!=="active"){await supabase.auth.signOut();location.href=loginPath;return}if(profile.must_change_password){location.href="../auth/change-password.html?next="+encodeURIComponent(pageType==="management"?"../management/":"../member/");return}const{data:roleRows,error:roleError}=await supabase.from("vmc_user_roles").select("role:vmc_roles(name)").eq("user_id",userId);if(roleError)throw roleError;const roles=(roleRows||[]).map(r=>r.role?.name).filter(Boolean);const activeRole=roles.find(r=>allowedRoles.includes(r));if(!activeRole){await supabase.auth.signOut();location.href=loginPath;return}document.querySelectorAll("[data-portal-name]").forEach(e=>e.textContent=profile.full_name);document.querySelectorAll("[data-portal-username]").forEach(e=>e.textContent=profile.username||"Not assigned");$("[data-account-status]")?.replaceChildren(document.createTextNode(titleCase(profile.account_status)));if(profile.avatar_url){const img=$("[data-profile-avatar-image]");if(img){img.src=profile.avatar_url;img.alt=profile.full_name+"'s profile picture";img.hidden=false;$("[data-profile-initials]")?.setAttribute("hidden","")}}else{$("[data-profile-initials]")?.replaceChildren(document.createTextNode(initials(profile.full_name)))}if(pageType==="member")await loadMemberOverview(userId);if(pageType==="management")await loadManagementOverview()}
+async function loadMemberOverview(userId){const[m,a,p]=await Promise.all([supabase.from("vmc_memberships").select("status,start_date,end_date,training_mode,plan:vmc_membership_plans(name,duration_unit,duration_count,session_type,price)").eq("member_id",userId).order("created_at",{ascending:false}).limit(1).maybeSingle(),supabase.from("vmc_attendance").select("id",{count:"exact",head:true}).eq("member_id",userId),supabase.from("vmc_payments").select("amount,payment_method,receipt_reference,payment_date,status").eq("member_id",userId).order("payment_date",{ascending:false}).limit(1).maybeSingle()]);if(m.error)throw m.error;if(a.error)throw a.error;if(p.error)throw p.error;renderMembership(m.data);$("[data-attendance-count]")?.replaceChildren(document.createTextNode(String(a.count??0)));renderLatestPayment(p.data)}
+function renderMembership(m){const s=m?.status||"not_set",start=m?.start_date,end=m?.end_date,plan=m?.plan;$("[data-membership-status]")?.replaceChildren(document.createTextNode(titleCase(s)));const pill=$("[data-membership-pill]");if(pill){pill.textContent=titleCase(s);pill.dataset.status=s}const planText=plan?plan.name+" · "+titleCase(plan.session_type)+" session"+(m?.training_mode?" · "+m.training_mode:""):"No membership plan recorded";$("[data-membership-detail]")?.replaceChildren(document.createTextNode(planText));$("[data-start-date]")?.replaceChildren(document.createTextNode("Start "+formatDate(start)));$("[data-end-date]")?.replaceChildren(document.createTextNode("End "+formatDate(end)));const progress=calculateProgress(start,end,s),bar=$("[data-membership-progress]"),percent=$("[data-progress-percent]"),track=$(".progress-track");if(bar)bar.style.width=progress+"%";if(percent)percent.textContent=progress+"%";track?.setAttribute("aria-valuenow",String(progress));const days=daysRemaining(end);$("[data-days-remaining]")?.replaceChildren(document.createTextNode(days==null?"—":String(days)));const na=$("[data-next-action]"),nd=$("[data-next-detail]");if(s==="active"&&days!=null){na.textContent=days<=7?"Renew soon.":"Keep showing up.";nd.textContent=days<=7?"Your membership ends in "+days+" day"+(days===1?"":"s")+".":"Your membership is active. Keep building your consistency."}else if(s==="pending"){na.textContent="Payment under review.";nd.textContent="VMC is reviewing your membership payment. Your status will update after verification."}else{na.textContent="Membership needs attention.";nd.textContent="Open Membership to review your current plan and renewal options."}$("[data-journey-title]")?.replaceChildren(document.createTextNode(days!=null&&days>0?"Build your consistency.":"Start your next VMC chapter."))}
+function calculateProgress(start,end,status){if(status==="pending"||!start||!end)return 0;const a=new Date(start+"T00:00:00").getTime(),b=new Date(end+"T23:59:59").getTime();if(!Number.isFinite(a)||!Number.isFinite(b)||b<=a)return 0;return Math.max(0,Math.min(100,Math.round(((Date.now()-a)/(b-a))*100)))}
+function daysRemaining(end){if(!end)return null;const t=new Date(end+"T23:59:59").getTime();return Number.isFinite(t)?Math.max(0,Math.ceil((t-Date.now())/86400000)):null}
+function renderLatestPayment(p){$("[data-latest-payment]")?.replaceChildren(document.createTextNode(p?formatMoney(p.amount):"—"));$("[data-latest-payment-detail]")?.replaceChildren(document.createTextNode(p?titleCase(p.status)+" · "+titleCase(p.payment_method)+" · "+formatDate(p.payment_date):"No payment recorded yet"))}
+async function countRows(t){const{count,error}=await supabase.from(t).select("*",{count:"exact",head:true});if(error)throw error;return count??0}
+async function loadManagementOverview(){const[m,p,a]=await Promise.all([countRows("vmc_profiles"),countRows("vmc_payments"),countRows("vmc_attendance")]);$("[data-member-count]")?.replaceChildren(document.createTextNode(String(m)));$("[data-payment-count]")?.replaceChildren(document.createTextNode(String(p)));$("[data-attendance-count]")?.replaceChildren(document.createTextNode(String(a)))}
+document.querySelectorAll("[data-sign-out]").forEach(b=>b.addEventListener("click",async()=>{await supabase.auth.signOut();location.href=loginPath}));
+loadPortal().catch(async e=>{console.error("VMC portal load failed:",e);await supabase.auth.signOut();location.href=loginPath});
