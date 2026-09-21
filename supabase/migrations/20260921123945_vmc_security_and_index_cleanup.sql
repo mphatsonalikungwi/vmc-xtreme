@@ -1,0 +1,3 @@
+create or replace function public.vmc_set_updated_at() returns trigger language plpgsql set search_path='' as $$begin new.updated_at=now(); return new; end;$$;
+create index vmc_attendance_recorded_by_idx on public.vmc_attendance(recorded_by); create index vmc_audit_logs_actor_id_idx on public.vmc_audit_logs(actor_id); create index vmc_payments_verified_by_idx on public.vmc_payments(verified_by);
+revoke execute on function public.get_owner_income_summary(date,date) from anon,authenticated,public;
