@@ -11,6 +11,7 @@ function formatMoney(v){return v==null?"—":"K"+Number(v).toLocaleString("en-MW
 function titleCase(v){return text(v).replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase())}
 function initials(name){const p=text(name).trim().split(/\s+/).filter(Boolean);return(p.slice(0,2).map(x=>x[0]).join("")||"V").toUpperCase()}
 const GALLERY_BUCKET="member-gallery";
+const memberApiUrl=`${VMC_CONFIG.supabaseUrl}/functions/v1/vmc-member-api`;
 const MAX_IMAGE_BYTES=8*1024*1024;
 const ALLOWED_IMAGE_TYPES=["image/jpeg","image/png","image/webp"];
 async function signedGalleryUrl(path){if(!path)return null;const{data,error}=await supabase.storage.from(GALLERY_BUCKET).createSignedUrl(path,3600);if(error)throw error;return data?.signedUrl||null}
@@ -25,7 +26,59 @@ function renderMembershipPage(m){const s=m?.status||"not_set",p=m?.plan;document
 function renderMembershipHistory(rows){const body=document.querySelector("[data-membership-history]");if(!body)return;if(!rows.length){body.innerHTML="<tr><td colspan=\"4\">No membership history yet.</td></tr>";return}body.innerHTML=rows.map(m=>"<tr><td>"+text(m.plan?.name||"—")+" · "+titleCase(m.plan?.session_type||"")+" </td><td>"+text(m.training_mode||"—")+"</td><td>"+formatDate(m.start_date)+" → "+formatDate(m.end_date)+"</td><td><span class=\"status-pill\" data-status=\""+text(m.status)+"\">"+titleCase(m.status)+"</span></td></tr>").join("")}
 let renewalPlans=[];
 async function loadRenewalPlans(){const{data,error}=await supabase.from("vmc_membership_plans").select("id,name,duration_unit,duration_count,session_type,price").order("price");if(error)throw error;renewalPlans=data||[];bindRenewalControls()}
-function bindRenewalControls(){const d=document.querySelector("[data-renew-duration]"),c=document.querySelector("[data-renew-count]"),s=document.querySelector("[data-renew-session]");const update=()=>{const plan=renewalPlans.find(p=>p.duration_unit===d.value&&p.session_type===s.value);const count=Math.max(1,Math.min(12,Number(c.value)||1));const price=plan?Number(plan.price)*count:0;document.querySelector("[data-renew-name]").textContent=plan?(plan.name+" · "+titleCase(plan.session_type)):"Plan unavailable";document.querySelector("[data-renew-summary]").textContent=count+" "+d.value+(count===1?"":"s");document.querySelector("[data-renew-price]").textContent=plan?formatMoney(price):"—"};[d,c,s].forEach(x=>x?.addEventListener("input",update));update()}
+function bindRenewalControls(){
+  const d=document.querySelector("[data-renew-duration]"),c=document.querySelector("[data-renew-count]"),s=document.querySelector("[data-renew-session]");
+  const payment=document.querySelector("[data-renew-payment]"),reference=document.querySelector("[data-renew-reference]"),submit=document.querySelector("[data-renew-submit]"),notice=document.querySelector("[data-renew-notice]");
+  const update=()=>{
+    const plan=renewalPlans.find(p=>p.duration_unit===d.value&&p.session_type===s.value);
+    const count=Math.max(1,Math.min(12,Number(c.value)||1));
+    c.value=count;
+    const price=plan?Number(plan.price)*count:0;
+    document.querySelector("[data-renew-name]").textContent=plan?(plan.name+" · "+titleCase(plan.session_type)):"Plan unavailable";
+    document.querySelector("[data-renew-summary]").textContent=count+" "+d.value+(count===1?"":"s");
+    document.querySelector("[data-renew-price]").textContent=plan?formatMoney(price):"—";
+  };
+  const updateReference=()=>{
+    const digital=payment?.value&&payment.value!=="Cash";
+    if(reference){reference.required=!!digital;reference.placeholder=digital?"Transaction / receipt reference":"Optional cash receipt / note";}
+  };
+  [d,c,s].forEach(x=>x?.addEventListener("input",update));
+  [d,c,s].forEach(x=>x?.addEventListener("change",update));
+  payment?.addEventListener("change",updateReference);
+  submit?.addEventListener("click",async()=>{
+    const count=Math.max(1,Math.min(12,Number(c?.value)||1));
+    const plan=renewalPlans.find(p=>p.duration_unit===d.value&&p.session_type===s.value);
+    if(!plan){setNotice(notice,"That membership option is unavailable.",true);return}
+    if(!payment?.value){setNotice(notice,"Choose a payment method before submitting.",true);return}
+    if(payment.value!=="Cash"&&!String(reference?.value||"").trim()){setNotice(notice,"Enter the payment reference for this payment method.",true);return}
+    submit.disabled=true;
+    setNotice(notice,"Submitting your renewal for VMC verification…");
+    try{
+      const{data:sessionData}=await supabase.auth.getSession();
+      const token=sessionData?.session?.access_token;
+      if(!token)throw new Error("Your session has expired. Please sign in again.");
+      const response=await fetch(memberApiUrl,{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token,apikey:VMC_CONFIG.supabasePublishableKey},body:JSON.stringify({
+        action:"submit_renewal",
+        duration_unit:d.value,
+        duration_count:count,
+        session_type:s.value,
+        training_mode:document.querySelector("[data-renew-training]")?.value,
+        payment_method:payment.value,
+        payment_reference:String(reference?.value||"").trim()||null
+      })});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(data.error||"Could not submit your renewal.");
+      setNotice(notice,"Renewal submitted. Your payment is now waiting for VMC verification.");
+      submit.textContent="Renewal submitted";
+      submit.disabled=true;
+    }catch(error){
+      setNotice(notice,error.message||"Could not submit your renewal.",true);
+      submit.disabled=false;
+    }
+  });
+  update();
+  updateReference();
+}
 async function loadPortal(){setupMenu();const{data:userData,error:userError}=await supabase.auth.getUser();if(userError||!userData.user){location.href=loginPath;return}const userId=userData.user.id;const{data:profile,error:profileError}=await supabase.from("vmc_profiles").select("id,full_name,username,phone,email,avatar_url,must_change_password,account_status").eq("id",userId).single();if(profileError||!profile||profile.account_status!=="active"){await supabase.auth.signOut();location.href=loginPath;return}if(profile.must_change_password){location.href="../auth/change-password.html?next="+encodeURIComponent(pageType==="management"?"../management/":"../member/");return}const{data:roleRows,error:roleError}=await supabase.from("vmc_user_roles").select("role:vmc_roles(name)").eq("user_id",userId);if(roleError)throw roleError;const roles=(roleRows||[]).map(r=>r.role?.name).filter(Boolean);const activeRole=roles.find(r=>allowedRoles.includes(r));if(!activeRole){await supabase.auth.signOut();location.href=loginPath;return}document.querySelectorAll("[data-portal-name]").forEach(e=>e.textContent=profile.full_name);document.querySelectorAll("[data-portal-username]").forEach(e=>e.textContent=profile.username||"Not assigned");$("[data-account-status]")?.replaceChildren(document.createTextNode(titleCase(profile.account_status)));if(profile.avatar_url){const img=$("[data-profile-avatar-image]");if(img){try{const avatarSrc=await resolveProfileAvatar(profile.avatar_url);if(avatarSrc){img.src=avatarSrc;img.alt=profile.full_name+"'s profile picture";img.hidden=false;$("[data-profile-initials]")?.setAttribute("hidden","")}}catch(e){console.error("VMC avatar load failed:",e)}}}else{$("[data-profile-initials]")?.replaceChildren(document.createTextNode(initials(profile.full_name)))}if(pageType==="member")await loadMemberOverview(userId);if(pageType==="member"&&location.pathname.endsWith("/membership.html"))await loadMembershipPage(userId);if(pageType==="member"&&location.pathname.endsWith("/payments.html"))await loadPaymentsPage(userId);if(pageType==="member"&&location.pathname.endsWith("/attendance.html"))await loadAttendancePage(userId);if(pageType==="member"&&location.pathname.endsWith("/profile.html"))await loadProfilePage(userId,profile);if(pageType==="member"&&location.pathname.endsWith("/photos.html"))await loadPhotosPage(userId);if(pageType==="member"&&location.pathname.endsWith("/notifications.html"))await loadNotificationsPage(userId);if(pageType==="management")await loadManagementOverview()}
 async function loadMemberOverview(userId){
   const [m,a,p,n] = await Promise.all([
