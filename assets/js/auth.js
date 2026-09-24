@@ -142,10 +142,14 @@ $("#member-register-form")?.addEventListener("submit", async (event) => {
       date_of_birth: form.get("date_of_birth"), training_mode: form.get("training_mode"),
       duration_count: Number(form.get("duration_count")), duration_unit: form.get("duration_unit"),
       session_type: form.get("session_type"), payment_method: form.get("payment_method"),
-      payment_reference: form.get("payment_reference")
+      payment_reference: form.get("payment_reference"),
+      rules_accepted: form.get("rules_accepted") === "true",
+      rules_version: "VMC Rules v1"
     });
     $("[data-credential-username]").textContent = data.username;
-    $("[data-credential-password]").textContent = data.temporary_password;
+    $("[data-credential-username-login]") && ($("[data-credential-username-login]").textContent = data.username);
+    $("[data-credential-email]") && ($("[data-credential-email]").textContent = form.get("email") ? form.get("email") : "No email was provided");
+    $("[data-credential-phone]") && ($("[data-credential-phone]").textContent = form.get("phone") || "Your registered phone number");
     $("#registration-shell").hidden = true;
     $("#registration-success").hidden = false;
     window.scrollTo({ top: 0, behavior: "smooth" });
