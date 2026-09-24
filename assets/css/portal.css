@@ -12,3 +12,430 @@
 
 /* Final photo-led authentication accent */
 .auth-screen{background:#070707}.auth-visual{position:relative;overflow:hidden;background-position:center;background-size:cover}.auth-visual:before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,0,0,.88),rgba(0,0,0,.42) 55%,rgba(229,35,47,.18));z-index:0}.auth-visual>*{position:relative;z-index:1}.member-auth-screen .auth-visual{background-image:url("../gallery-community.jpg")}.management-auth-screen .auth-visual{background-image:url("../gallery-strength.jpg")}.auth-visual .eyebrow{color:#f02a37}.role-badge{color:#fff!important;border-color:rgba(229,35,47,.55);background:rgba(229,35,47,.12)}.auth-submit.button-primary{background:#e5232f;border-color:#e5232f;color:#fff}.auth-submit.button-primary:hover{background:#c91823;border-color:#c91823}.auth-links a:hover{color:#e5232f}.auth-form input:focus{border-color:#e5232f;box-shadow:0 0 0 3px rgba(229,35,47,.1)}@media(max-width:800px){.auth-visual{display:block;min-height:250px;padding:28px;margin-bottom:4px}.auth-visual h1{font-size:clamp(2.3rem,12vw,3.8rem)}.auth-layout{align-content:center}.auth-panel{margin-top:0}}
+
+
+/* =========================================================
+   VMCXtreme Premium Member Experience — C foundation + D atmosphere
+   ========================================================= */
+:root{
+  --vmc-bg:#f3f2ee;
+  --vmc-surface:#ffffff;
+  --vmc-ink:#101419;
+  --vmc-muted:#68707a;
+  --vmc-line:#dfe1e3;
+  --vmc-dark:#0a1016;
+  --vmc-dark-2:#111a23;
+  --vmc-gold:#c6a15b;
+  --vmc-ice:#8fb8d4;
+  --vmc-success:#2f9b70;
+  --vmc-warning:#c58b3c;
+  --vmc-danger:#b95d5d;
+}
+.member-portal-page{
+  background:var(--vmc-bg);
+  color:var(--vmc-ink);
+}
+.member-portal-page .portal-header{
+  min-height:76px;
+  background:rgba(9,15,21,.96);
+  border-bottom:1px solid rgba(255,255,255,.09);
+  box-shadow:0 8px 30px rgba(5,10,15,.08);
+}
+.member-portal-page .portal-brand{
+  letter-spacing:.13em;
+}
+.member-portal-page .portal-user-name{color:#cbd2d8}
+.member-portal-page .portal-button{
+  background:#121b24;
+  border-color:#34414d;
+  color:#fff;
+}
+.member-portal-page .portal-button:hover{border-color:#667786}
+.member-portal-page .portal-shell{
+  grid-template-columns:268px minmax(0,1fr);
+  background:var(--vmc-bg);
+}
+.member-portal-page .portal-sidebar{
+  background:linear-gradient(180deg,#0a1016 0%,#0d151d 100%);
+  border-right:1px solid #1d2933;
+  padding:28px 16px 20px;
+}
+.member-portal-page .portal-sidebar-head{
+  padding:2px 8px 18px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.member-portal-page .portal-label,
+.member-portal-page .card-label{color:#8995a0}
+.member-portal-page .portal-sidebar-title{color:#d4d9de}
+.member-portal-page .portal-nav{gap:4px;margin-top:18px}
+.member-portal-page .portal-nav a{
+  position:relative;
+  padding:13px 13px;
+  color:#aeb8c0;
+  border:1px solid transparent;
+  border-radius:11px;
+  transition:.18s ease;
+}
+.member-portal-page .portal-nav a span{font-weight:750}
+.member-portal-page .portal-nav a small{color:#697680}
+.member-portal-page .portal-nav a:hover{
+  background:#121d27;
+  color:#fff;
+  border-color:#22313d;
+  transform:translateX(2px);
+}
+.member-portal-page .portal-nav a.is-active{
+  background:linear-gradient(90deg,rgba(198,161,91,.14),rgba(143,184,212,.05));
+  color:#fff;
+  border-color:rgba(198,161,91,.35);
+}
+.member-portal-page .portal-nav a.is-active:before{
+  content:"";
+  position:absolute;
+  left:-1px;
+  top:10px;
+  bottom:10px;
+  width:3px;
+  border-radius:3px;
+  background:var(--vmc-gold);
+}
+.member-portal-page .portal-sidebar-footer{
+  border-top:1px solid rgba(255,255,255,.08);
+  padding:18px 8px 4px;
+}
+.member-portal-page .role-badge{
+  background:rgba(198,161,91,.1);
+  border-color:rgba(198,161,91,.35);
+  color:#e5d4ad!important;
+}
+.member-portal-page .portal-sidebar-signout{color:#9ba5ad}
+.member-portal-page .portal-content{
+  max-width:1480px;
+  padding:clamp(26px,4vw,58px);
+}
+.member-portal-page .portal-heading{
+  margin-bottom:30px;
+}
+.member-portal-page .portal-heading h1{
+  color:var(--vmc-ink);
+  font-weight:850;
+  letter-spacing:-.055em;
+}
+.member-portal-page .portal-heading p:last-child{color:var(--vmc-muted)}
+.member-portal-page .portal-primary-link{
+  background:var(--vmc-dark);
+  border-color:var(--vmc-dark);
+  color:#fff;
+  border-radius:10px;
+  box-shadow:0 10px 25px rgba(10,16,22,.13);
+}
+.member-portal-page .portal-primary-link:hover{background:#18242e}
+.member-portal-page .member-home-layout{
+  grid-template-columns:minmax(0,1.75fr) minmax(280px,.7fr);
+  gap:16px;
+}
+.member-portal-page .member-hero-card,
+.member-portal-page .portal-card,
+.member-portal-page .stat-card,
+.member-portal-page .journey-card{
+  background:var(--vmc-surface);
+  border:1px solid var(--vmc-line);
+  border-radius:16px;
+  box-shadow:0 12px 36px rgba(19,28,35,.045);
+}
+.member-portal-page .member-hero-card{
+  padding:clamp(24px,3vw,36px);
+  background:linear-gradient(145deg,#fff 0%,#fafaf8 70%,#f1eee7 100%);
+}
+.member-portal-page .member-profile-row{
+  border-bottom:1px solid var(--vmc-line);
+}
+.member-portal-page .member-avatar{
+  background:var(--vmc-dark);
+  border:2px solid #fff;
+  box-shadow:0 0 0 1px var(--vmc-line),0 8px 24px rgba(10,16,22,.12);
+}
+.member-portal-page .member-identity h2{color:var(--vmc-ink)}
+.member-portal-page .member-identity p{color:#737c84}
+.member-portal-page .icon-link{color:#56616a}
+.member-portal-page .membership-status-block{padding-top:30px}
+.member-portal-page .status-heading h3{
+  color:var(--vmc-ink);
+  font-size:clamp(1.9rem,4vw,3.25rem);
+}
+.member-portal-page .status-pill{
+  border-color:#cfd4d8;
+  color:#56616a;
+  background:#f7f8f8;
+}
+.member-portal-page .status-pill[data-status="active"]{
+  color:var(--vmc-success);
+  border-color:rgba(47,155,112,.28);
+  background:rgba(47,155,112,.07);
+}
+.member-portal-page .membership-plan-line{color:#5f6870}
+.member-portal-page .progress-track{
+  background:#e7e9e9;
+  border-color:#e1e3e4;
+  height:10px;
+}
+.member-portal-page .progress-track span{
+  background:linear-gradient(90deg,var(--vmc-gold),var(--vmc-ice));
+}
+.member-portal-page .progress-meta,.member-portal-page .progress-dates{color:#7a838b}
+.member-portal-page .progress-meta strong{color:var(--vmc-ink)}
+.member-portal-page .member-side-stack{gap:16px}
+.member-portal-page .portal-card{padding:24px}
+.member-portal-page .portal-card h3{color:var(--vmc-ink)}
+.member-portal-page .portal-card p{color:#707980}
+.member-portal-page .text-link{color:#3e4a53}
+.member-portal-page .text-link:hover{color:#9b7b40}
+.member-portal-page .portal-section{margin-top:44px}
+.member-portal-page .section-heading h2{color:var(--vmc-ink)}
+.member-portal-page .stats-grid{gap:14px}
+.member-portal-page .stat-card{
+  min-height:148px;
+  padding:23px;
+  position:relative;
+  overflow:hidden;
+}
+.member-portal-page .stat-card:after{
+  content:"";
+  position:absolute;
+  width:90px;height:90px;
+  right:-35px;bottom:-40px;
+  border:1px solid #e7e3d9;
+  border-radius:50%;
+}
+.member-portal-page .stat-card strong{color:var(--vmc-ink)}
+.member-portal-page .stat-card p{color:#7b848b}
+.member-portal-page .activity-grid{gap:14px}
+.member-portal-page .journey-card{
+  background:linear-gradient(120deg,#0b1218,#111c25);
+  border-color:#1c2a34;
+  color:#fff;
+}
+.member-portal-page .journey-icon{
+  border-color:#3b4b57;
+  color:#e1c98f;
+  background:rgba(198,161,91,.08);
+}
+.member-portal-page .journey-card h3{color:#fff}
+.member-portal-page .journey-card p{color:#aeb8c0}
+.member-portal-page .portal-data-error{
+  background:#fff8ef;
+  border-color:#e4c99e;
+  color:#765b31;
+}
+
+/* Member sub-pages: consistent editorial cards and premium controls */
+.member-portal-page .membership-module-grid,
+.member-portal-page .profile-page-grid{gap:16px}
+.member-portal-page .membership-detail-grid{
+  background:var(--vmc-line);
+  border-color:var(--vmc-line);
+  border-radius:14px;
+  overflow:hidden;
+}
+.member-portal-page .membership-detail-grid>div{background:#fff}
+.member-portal-page .membership-detail-grid strong{color:var(--vmc-ink)}
+.member-portal-page .renewal-preview{
+  background:#fbfaf7;
+  border-color:#e5e0d6;
+}
+.member-portal-page .renewal-preview h3{color:var(--vmc-ink)}
+.member-portal-page .renewal-preview>strong{color:var(--vmc-ink)}
+.member-portal-page .renewal-controls select,
+.member-portal-page .renewal-controls input,
+.member-portal-page .renewal-payment-grid select,
+.member-portal-page .renewal-payment-grid input,
+.member-portal-page .profile-form input,
+.member-portal-page .profile-form select{
+  background:#fff;
+  color:var(--vmc-ink);
+  border-color:#d5d9dc;
+  border-radius:10px;
+  padding:12px 13px;
+}
+.member-portal-page .portal-primary-button{
+  background:var(--vmc-dark);
+  border-color:var(--vmc-dark);
+  color:#fff;
+}
+.member-portal-page .portal-primary-button:hover{background:#18242e}
+.member-portal-page .portal-table-wrap{
+  border-color:var(--vmc-line);
+  background:#fff;
+}
+.member-portal-page .portal-table th,
+.member-portal-page .portal-table td{border-color:#eceeef}
+.member-portal-page .portal-table th{color:#7a838b}
+.member-portal-page .portal-table td{color:#39434b}
+.member-portal-page .attendance-calendar{
+  background:#dfe2e4;
+  border-color:#dfe2e4;
+}
+.member-portal-page .attendance-day,
+.member-portal-page .attendance-weekday{background:#fff}
+.member-portal-page .attendance-day-number{color:#727b83}
+.member-portal-page .attendance-day.is-present .attendance-day-number{color:var(--vmc-ink)}
+.member-portal-page .attendance-day.is-present:after{background:var(--vmc-gold);width:7px;height:7px}
+.member-portal-page .attendance-day.is-today{outline-color:var(--vmc-ice)}
+.member-portal-page .profile-photo-large{
+  background:var(--vmc-dark);
+  border-color:#fff;
+  box-shadow:0 0 0 1px var(--vmc-line),0 12px 28px rgba(10,16,22,.12);
+}
+.member-portal-page .profile-account-strip,
+.member-portal-page .notification-toolbar,
+.member-portal-page .notification-item{
+  background:#fff;
+  border-color:var(--vmc-line);
+}
+.member-portal-page .notification-item h3{color:var(--vmc-ink)}
+.member-portal-page .notification-item p{color:#6c757d}
+.member-portal-page .notification-item.is-read{opacity:.58}
+
+/* Registration + success: clean Swiss form with atmospheric edge */
+.registration-page{
+  background:var(--vmc-bg);
+  color:var(--vmc-ink);
+}
+.registration-page .portal-header{
+  background:rgba(9,15,21,.96);
+}
+.registration-main{
+  background:
+    radial-gradient(circle at 86% 5%,rgba(143,184,212,.18),transparent 24%),
+    radial-gradient(circle at 10% 10%,rgba(198,161,91,.13),transparent 22%),
+    var(--vmc-bg);
+}
+.registration-shell,.registration-success{width:min(1180px,100%)}
+.registration-intro{max-width:850px}
+.registration-intro h1,.registration-success h1{color:var(--vmc-ink)}
+.registration-intro>p:last-child,.success-lead{color:#69727a}
+.registration-section{
+  background:rgba(255,255,255,.94);
+  border-color:#dfe2e4;
+  border-radius:16px;
+  box-shadow:0 12px 35px rgba(19,28,35,.04);
+}
+.registration-section-heading{border-bottom:1px solid #eceeef;padding-bottom:18px}
+.registration-section-heading h2{color:var(--vmc-ink)}
+.registration-section-heading p{color:#78828a}
+.registration-grid{gap:16px}
+.field{color:#303940}
+.field input,.field select{
+  background:#fff;
+  color:var(--vmc-ink);
+  border-color:#d4d9dc;
+  border-radius:10px;
+}
+.field input::placeholder{color:#a0a7ad}
+.field input:focus,.field select:focus{
+  border-color:var(--vmc-ice);
+  box-shadow:0 0 0 3px rgba(143,184,212,.14);
+}
+.choice-grid span{
+  background:#fafbfb;
+  border-color:#d8dde0;
+}
+.choice-grid input:checked+span{
+  border-color:var(--vmc-gold);
+  background:#fbf7ed;
+  box-shadow:inset 0 0 0 1px rgba(198,161,91,.2);
+}
+.price-preview{
+  background:#0b1218;
+  border-color:#1d2b35;
+  color:#fff;
+}
+.price-preview strong{color:#fff}
+.price-preview span,.price-preview small{color:#aab4bb}
+.rules-consent{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  color:#4e5961;
+  font-size:.9rem;
+  line-height:1.55;
+}
+.rules-consent input{
+  width:18px;height:18px;accent-color:#b38b47;flex:0 0 auto;margin-top:2px;
+}
+.rules-consent a{color:#6f5630;font-weight:800}
+.registration-actions .button-primary,
+.success-actions .button-primary{
+  background:var(--vmc-dark);
+  border-color:var(--vmc-dark);
+  color:#fff;
+}
+.registration-actions .button-primary:hover,
+.success-actions .button-primary:hover{background:#18242e}
+.registration-success{
+  padding-top:64px;
+}
+.success-mark{
+  background:#0b1218;
+  border-color:#30404d;
+  color:#e2c887;
+  box-shadow:0 12px 30px rgba(10,16,22,.12);
+}
+.success-card{
+  background:#fff;
+  border-color:#dfe2e4;
+  box-shadow:0 10px 28px rgba(19,28,35,.04);
+}
+.success-card-primary{
+  background:linear-gradient(135deg,#0b1218,#17232d);
+  border-color:#1e303d;
+  color:#fff;
+}
+.success-card-primary span,.success-card-primary small{color:#9eabb4}
+.success-card-primary strong{color:#fff}
+.success-login-card{
+  margin-top:16px;
+  padding:26px;
+  background:#fff;
+  border:1px solid #dfe2e4;
+  border-radius:16px;
+  box-shadow:0 10px 28px rgba(19,28,35,.04);
+}
+.success-login-card h2{margin:7px 0 20px;color:var(--vmc-ink);font-size:1.55rem}
+.success-login-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:1px;
+  background:#e2e5e7;
+  border:1px solid #e2e5e7;
+  border-radius:12px;
+  overflow:hidden;
+}
+.success-login-grid>div{background:#fafafa;padding:18px}
+.success-login-grid strong{color:var(--vmc-ink)}
+.success-login-grid p{margin:7px 0 0;color:#4f5a62;word-break:break-word}
+.success-login-grid small{display:block;margin-top:6px;color:#8a9399}
+.success-password-note{margin:16px 0 0;color:#707980;font-size:.84rem}
+.login-guide>div{
+  background:#fff;
+  border-color:#dfe2e4;
+}
+.login-guide strong{color:var(--vmc-ink)}
+.login-guide p{color:#68727a}
+
+@media(max-width:800px){
+  .member-portal-page .portal-shell{display:block}
+  .member-portal-page .portal-sidebar{
+    background:#0a1016;
+    box-shadow:18px 0 45px rgba(0,0,0,.45);
+  }
+  .member-portal-page .portal-content{padding:30px 18px}
+  .success-login-grid{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .member-portal-page .portal-content{padding:26px 14px}
+  .member-portal-page .member-hero-card{padding:20px}
+  .registration-section{padding:22px}
+  .success-login-card{padding:20px}
+}
+
