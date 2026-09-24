@@ -20,3 +20,44 @@ body{background:var(--vmc-ink);color:#f7f5f0}.accent{color:var(--vmc-red)!import
 .access-section{background:#f4f1eb;color:#111;padding:110px clamp(20px,7vw,100px)}.access-section .eyebrow{color:#777}.access-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:40px}.access-card{border:1px solid #d2cec5;border-radius:0;background:#fff;padding:35px}.access-card h3{font-size:2rem;letter-spacing:-.04em}.access-card p:not(.eyebrow){color:#666;max-width:520px}.access-card.management-card{background:#111;color:#fff;border-color:#111}.access-card.management-card p:not(.eyebrow){color:#aaa}.site-footer{background:#060606;color:#777}.site-footer a{color:#aaa;text-decoration:none}.site-footer a:hover{color:#fff}
 @media(max-width:900px){.hero{min-height:720px}.hero-hours{position:relative;right:auto;bottom:auto;margin-top:35px}.hero{display:block;padding-top:130px}.hero-copy{max-width:760px}.statement-section,.location-section{grid-template-columns:1fr;gap:40px}.gallery-heading{grid-template-columns:1fr;gap:25px}.gym-gallery{grid-template-columns:1fr 1fr;grid-template-rows:300px 220px 220px}.gym-gallery figure:first-child{grid-row:auto;grid-column:1/3}.location-photo{min-height:400px}.access-grid{grid-template-columns:1fr}.price-card.featured{transform:none}}
 @media(max-width:767px){.site-header{position:sticky;top:0}.site-nav-shell{top:72px}.hero{min-height:720px;padding:95px 20px 35px}.hero-media img{object-position:58% center}.hero-overlay{background:linear-gradient(90deg,rgba(0,0,0,.9),rgba(0,0,0,.45)),linear-gradient(0deg,rgba(0,0,0,.85),transparent 70%)}.hero h1{font-size:clamp(3.4rem,18vw,5.5rem)}.hero-hours{width:min(100%,330px);margin-top:28px}.hero-facts{gap:6px}.hero-facts span{font-size:.58rem}.statement-section{padding:80px 20px}.section{padding:80px 20px}.program-grid{grid-template-columns:1fr}.program-grid article{min-height:175px}.program-grid h3{margin-top:40px}.gym-gallery{grid-template-columns:1fr;grid-template-rows:300px repeat(3,220px)}.gym-gallery figure:first-child{grid-column:auto}.location-section{display:flex;flex-direction:column}.location-photo{min-height:330px}.location-copy{padding:70px 20px}.access-section{padding:80px 20px}.site-footer{display:grid}}
+
+/* =========================================================
+   VMC premium design system: Swiss structure + atmospheric brand layer
+   ========================================================= */
+:root{--vmc-gold:#c6a15b;--vmc-ice:#8fb8d4;--vmc-paper:#f5f3ee;--vmc-dark:#090f14;--vmc-line:#dfe2e4}
+.nav-action-solid{background:var(--vmc-gold)!important;border-color:var(--vmc-gold)!important;color:#0a0d10!important}
+.accent{color:var(--vmc-gold)!important}
+.hero h1 span{color:#e5dfd2}
+.hero-facts strong{color:var(--vmc-gold)}
+.hero-hours{border-left-color:var(--vmc-gold)}
+.hero-media img{filter:saturate(.72) contrast(1.06)}
+.statement-section{background:var(--vmc-paper)}
+.statement-section h2 em{color:#7e98aa}
+.programs-section{background:#0b1117}
+.program-grid article:hover,.price-card:hover,.access-card:hover{border-color:rgba(198,161,91,.55)}
+.price-card.featured{border-color:var(--vmc-gold)}
+.price-card.featured b{background:var(--vmc-gold);color:#0a0d10}
+.gallery-section{background:var(--vmc-paper)}
+.access-section{background:var(--vmc-paper)}
+.rules-section{background:#0b1117;color:#f5f5f3;padding:110px clamp(20px,7vw,100px);border-top:1px solid #202b34}
+.rules-intro{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:end;max-width:1150px;margin:0 auto 46px}
+.rules-intro h2{margin:0;font-size:clamp(3rem,6vw,6rem);line-height:.9;letter-spacing:-.06em}
+.rules-intro h2 span{color:#899eac}
+.rules-intro>p:last-child{max-width:460px;color:#9da7ae;line-height:1.7;margin:0}
+.rules-grid{max-width:1150px;margin:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:#28343d;border:1px solid #28343d}
+.rules-grid article{background:#101820;min-height:150px;padding:24px;transition:.18s ease}
+.rules-grid article:hover{background:#151f28;transform:translateY(-2px)}
+.rules-grid article span{color:var(--vmc-gold);font-size:.68rem;font-weight:900;letter-spacing:.12em}
+.rules-grid article p{margin:32px 0 0;color:#c1c8cd;line-height:1.55;font-size:.9rem}
+@media(max-width:900px){.rules-intro{grid-template-columns:1fr;gap:24px}.rules-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:767px){.rules-section{padding:80px 20px}.rules-grid{grid-template-columns:1fr}.rules-grid article{min-height:125px}.rules-grid article p{margin-top:22px}}
+/* Homepage navigation: deterministic mobile menu behavior */
+.site-header{position:sticky;top:0;z-index:100}
+.site-menu-button{position:relative;z-index:102;flex:0 0 44px}
+.site-nav-shell{z-index:101}
+@media(max-width:767px){
+  .site-menu-button{display:grid!important}
+  .site-nav-shell{display:none!important}
+  .site-nav-shell.is-open{display:block!important}
+  .site-nav-shell nav{display:grid!important;overflow:visible!important}
+}
