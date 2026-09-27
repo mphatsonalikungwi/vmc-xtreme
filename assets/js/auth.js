@@ -4,7 +4,7 @@ import { VMC_CONFIG } from "./config.js";
 const supabase = createClient(VMC_CONFIG.supabaseUrl, VMC_CONFIG.supabasePublishableKey, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 });
-const authUrl = `${VMC_CONFIG.supabaseUrl}/functions/v1/vmc-auth`;
+const authUrl = `${VMC_CONFIG.supabaseUrl}/functions/v1/vmc-auth-v2`;
 
 const $ = (selector) => document.querySelector(selector);
 
