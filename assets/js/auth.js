@@ -127,13 +127,43 @@ $("[data-management-login]")?.addEventListener("submit", async (event) => {
   }
 });
 
+function showRegistrationFailure(error) {
+  const shell = $("#registration-shell");
+  const success = $("#registration-success");
+  const failure = $("#registration-failure");
+  if (!failure) {
+    message(error?.message || "We could not complete your registration.", true);
+    return;
+  }
+  const detail = failure.querySelector("[data-registration-failure-message]");
+  if (detail) detail.textContent = error?.message || "We could not complete your registration. Please return to the form and try again.";
+  if (shell) shell.hidden = true;
+  if (success) success.hidden = true;
+  failure.hidden = false;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 $("#member-register-form")?.addEventListener("submit", async (event) => {
   event.preventDefault();
+  const formElement = event.currentTarget;
+  const submitButton = formElement.querySelector('[type="submit"]');
   message("Creating your account and submitting your membership…");
-  const form = new FormData(event.currentTarget);
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.dataset.originalText = submitButton.textContent;
+    submitButton.textContent = "Creating your account…";
+  }
+  const form = new FormData(formElement);
   const password = String(form.get("password") || "");
   const confirmPassword = String(form.get("confirm_password") || "");
-  if (password !== confirmPassword) return message("Passwords do not match.", true);
+  if (password !== confirmPassword) {
+    message("Passwords do not match.", true);
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = submitButton.dataset.originalText || "Create my VMC account";
+    }
+    return;
+  }
   try {
     const data = await authRequest("register", {
       full_name: form.get("full_name"), password,
@@ -146,16 +176,33 @@ $("#member-register-form")?.addEventListener("submit", async (event) => {
       rules_accepted: form.get("rules_accepted") === "true",
       rules_version: "VMC Rules v1"
     });
-    $("[data-credential-username]").textContent = data.username;
-    $("[data-credential-username-login]") && ($("[data-credential-username-login]").textContent = data.username);
-    $("[data-credential-email]") && ($("[data-credential-email]").textContent = form.get("email") ? form.get("email") : "No email was provided");
-    $("[data-credential-phone]") && ($("[data-credential-phone]").textContent = form.get("phone") || "Your registered phone number");
+    const username = String(data.username || "").trim();
+    if (!username) throw new Error("VMC created the account response without a username. Please contact VMC before trying again.");
+    $("[data-credential-username]")?.replaceChildren(document.createTextNode(username));
+    $("[data-credential-username-login]")?.replaceChildren(document.createTextNode(username));
+    $("[data-credential-email]")?.replaceChildren(document.createTextNode(form.get("email") ? form.get("email") : "No email was provided"));
+    $("[data-credential-phone]")?.replaceChildren(document.createTextNode(form.get("phone") || "Your registered phone number"));
     $("#registration-shell").hidden = true;
+    $("#registration-failure").hidden = true;
     $("#registration-success").hidden = false;
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (error) {
-    message(error.message, true);
+    console.error("VMC registration failed:", error);
+    showRegistrationFailure(error);
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = submitButton.dataset.originalText || "Create my VMC account";
+    }
   }
+});
+
+$("[data-registration-retry]")?.addEventListener("click", () => {
+  $("#registration-failure").hidden = true;
+  $("#registration-success").hidden = true;
+  $("#registration-shell").hidden = false;
+  message("");
+  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 $("#password-form")?.addEventListener("submit", async (event) => {
