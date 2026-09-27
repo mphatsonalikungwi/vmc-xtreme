@@ -59,6 +59,21 @@ async function findAvailableUsername(fullName: string) {
   throw new Error("Unable to create a unique VMC username");
 }
 
+async function getOrCreatePlan(unit: string, count: number, sessionType: string, amount: number) {
+  const name = `${count} ${unit}${count === 1 ? "" : "s"} — ${sessionType === "single" ? "Single" : "Double"}`;
+  const { data: existing, error } = await admin.from("vmc_membership_plans")
+    .select("id,name,duration_unit,duration_count,session_type,price")
+    .eq("duration_unit", unit).eq("duration_count", count)
+    .eq("session_type", sessionType).eq("price", amount).eq("is_active", true).limit(1);
+  if (error) throw error;
+  if (existing?.[0]) return existing[0];
+  const { data, error: insertError } = await admin.from("vmc_membership_plans")
+    .insert({ name, duration_unit: unit, duration_count: count, session_type: sessionType, price: amount, is_active: true })
+    .select("id,name,duration_unit,duration_count,session_type,price").single();
+  if (insertError || !data) throw insertError ?? new Error("Could not create membership plan.");
+  return data;
+}
+
 async function register(body: Record<string, unknown>) {
   const fullName = typeof body.full_name === "string" ? body.full_name.trim() : "";
   const email = typeof body.email === "string" && body.email.trim() ? normalizeEmail(body.email) : null;
@@ -88,9 +103,9 @@ async function register(body: Record<string, unknown>) {
   if (paymentMethod !== "Cash" && !paymentReference) return json({ error: "Enter the payment reference for this payment method." }, 400);
   if (!rulesAccepted || rulesVersion !== "VMC Rules v1") return json({ error: "Please accept the current VMC Xtreme rules before creating your account." }, 400);
 
-  const { data: plan, error: planError } = await admin
+  const { data: basePlan, error: planError } = await admin
     .from("vmc_membership_plans")
-    .select("id,name,duration_unit,duration_count,session_type,price")
+    .select("price")
     .eq("duration_unit", durationUnit)
     .eq("duration_count", 1)
     .eq("session_type", sessionType)
@@ -98,10 +113,18 @@ async function register(body: Record<string, unknown>) {
     .maybeSingle();
 
   if (planError) return json({ error: "Membership pricing could not be loaded. Please try again." }, 500);
-  if (!plan) return json({ error: "That membership option is currently unavailable." }, 400);
+  if (!basePlan) return json({ error: "That membership option is currently unavailable." }, 400);
 
-  const amount = Number(plan.price) * durationCount;
+  const amount = Number(basePlan.price) * durationCount;
   if (!Number.isFinite(amount) || amount <= 0) return json({ error: "The selected membership price is invalid." }, 400);
+
+  let plan;
+  try {
+    plan = await getOrCreatePlan(durationUnit, durationCount, sessionType, amount);
+  } catch (error) {
+    console.error("VMC membership plan creation failed:", error);
+    return json({ error: "That membership option could not be prepared. Please try again." }, 500);
+  }
 
   if (email) {
     const { data: existingProfile } = await admin.from("vmc_profiles").select("id").eq("email", email).maybeSingle();
