@@ -215,6 +215,27 @@ async function register(body: Record<string, unknown>) {
   }
 }
 
+async function changeUsername(req: Request, body: Record<string, unknown>) {
+  const authorization = req.headers.get("Authorization") ?? "";
+  const token = authorization.replace(/^Bearer\s+/i, "");
+  if (!token) return json({ error: "Authentication is required." }, 401);
+  const publicKeys = JSON.parse(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS")!);
+  const userClient = createClient(supabaseUrl, publicKeys["default"], {
+    global: { headers: { Authorization: authorization } },
+    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+  });
+  const { data: authData, error: authError } = await userClient.auth.getUser(token);
+  if (authError || !authData.user) return json({ error: "Your session is invalid or expired." }, 401);
+  const raw = typeof body.username === "string" ? body.username.trim().toLowerCase() : "";
+  const username = raw.startsWith("@") ? raw : `@${raw}`;
+  if (!/^@[a-z0-9][a-z0-9_]{2,39}_vmc[0-9]+$/.test(username)) return json({ error: "Use a username such as @your_name_vmc1." }, 400);
+  const { data: existing } = await admin.from("vmc_profiles").select("id").ilike("username", username).neq("id", authData.user.id).maybeSingle();
+  if (existing) return json({ error: "That VMC username is already in use." }, 409);
+  const { error } = await admin.from("vmc_profiles").update({ username, updated_at: new Date().toISOString() }).eq("id", authData.user.id);
+  if (error) return json({ error: "Could not update your VMC username." }, 500);
+  return json({ ok: true, username });
+}
+
 async function login(body: Record<string, unknown>) {
   const identifier = typeof body.identifier === "string" ? body.identifier.trim() : "";
   const password = typeof body.password === "string" ? body.password : "";
