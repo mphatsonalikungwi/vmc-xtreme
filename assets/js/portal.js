@@ -12,6 +12,7 @@ function titleCase(v){return text(v).replaceAll("_"," ").replace(/\b\w/g,c=>c.to
 function initials(name){const p=text(name).trim().split(/\s+/).filter(Boolean);return(p.slice(0,2).map(x=>x[0]).join("")||"V").toUpperCase()}
 const GALLERY_BUCKET="member-gallery";
 const memberApiUrl=`${VMC_CONFIG.supabaseUrl}/functions/v1/vmc-member-api`;
+const managementApiUrl=`${VMC_CONFIG.supabaseUrl}/functions/v1/vmc-management-api`;
 const MAX_IMAGE_BYTES=8*1024*1024;
 const ALLOWED_IMAGE_TYPES=["image/jpeg","image/png","image/webp"];
 async function signedGalleryUrl(path){if(!path)return null;const{data,error}=await supabase.storage.from(GALLERY_BUCKET).createSignedUrl(path,3600);if(error)throw error;return data?.signedUrl||null}
@@ -308,7 +309,52 @@ async function loadNotificationPreview(userId){
   $("[data-notification-preview-message]")?.replaceChildren(document.createTextNode(data?.message||"Your VMC notifications will appear here."));
   $("[data-notification-unread]")?.replaceChildren(document.createTextNode((count??0)+" unread"));
 }
-async function countRows(t){const{count,error}=await supabase.from(t).select("*",{count:"exact",head:true});if(error)throw error;return count??0}
-async function loadManagementOverview(){const[m,p,a]=await Promise.all([countRows("vmc_profiles"),countRows("vmc_payments"),countRows("vmc_attendance")]);$("[data-member-count]")?.replaceChildren(document.createTextNode(String(m)));$("[data-payment-count]")?.replaceChildren(document.createTextNode(String(p)));$("[data-attendance-count]")?.replaceChildren(document.createTextNode(String(a)))}
+async function managementRequest(action,payload={}) {
+  const {data:sessionData}=await supabase.auth.getSession();
+  const token=sessionData?.session?.access_token;
+  if(!token)throw new Error("Your management session has expired. Please sign in again.");
+  const response=await fetch(managementApiUrl,{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token,apikey:VMC_CONFIG.supabasePublishableKey},body:JSON.stringify({action,...payload})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||"Management request failed.");
+  return data;
+}
+function managementMoney(v){return v==null?"—":"K"+Number(v).toLocaleString("en-MW")}
+function managementDate(v){if(!v)return"—";const d=new Date(v.length===10?v+"T00:00:00":v);return Number.isNaN(d.getTime())?v:new Intl.DateTimeFormat("en-MW",{day:"numeric",month:"short",year:"numeric"}).format(d)}
+function renderManagementDashboard(data){
+  const s=data.stats||{};
+  $("[data-management-date]")?.replaceChildren(document.createTextNode(new Intl.DateTimeFormat("en-MW",{day:"numeric",month:"long",year:"numeric"}).format(new Date())));
+  $("[data-member-count]")?.replaceChildren(document.createTextNode(String(s.totalMembers??0)));
+  $("[data-active-member-count]")?.replaceChildren(document.createTextNode(String(s.activeMembers??0)));
+  $("[data-pending-payment-count]")?.replaceChildren(document.createTextNode(String(s.pendingPayments??0)));
+  $("[data-today-attendance-count]")?.replaceChildren(document.createTextNode(String(s.todayVisits??0)));
+  $("[data-expiring-count]")?.replaceChildren(document.createTextNode(String(s.expiringSoon??0)));
+  $("[data-revenue-count]")?.replaceChildren(document.createTextNode(managementMoney(s.verifiedRevenue||0)));
+
+  const queue=$("[data-management-payment-queue]");
+  if(queue){
+    queue.replaceChildren();
+    const rows=data.pendingPayments||[];
+    if(!rows.length){const e=document.createElement("div");e.className="management-empty management-empty-success";e.textContent="Payment queue is clear. No pending payments require review.";queue.append(e);}
+    rows.forEach(row=>{
+      const item=document.createElement("article");item.className="management-queue-item";
+      const info=document.createElement("div");info.className="management-queue-info";
+      const label=document.createElement("span");label.className="card-label";label.textContent=managementDate(row.payment_date);
+      const h=document.createElement("h3");h.textContent=row.member;
+      const p=document.createElement("p");p.textContent=managementMoney(row.amount)+" · "+titleCase(row.payment_method)+" · "+(row.receipt_reference||"No reference");
+      info.append(label,h,p);
+      const actions=document.createElement("div");actions.className="management-actions";
+      const verify=document.createElement("button");verify.className="management-action is-verify";verify.type="button";verify.textContent="Verify";
+      const reject=document.createElement("button");reject.className="management-action";reject.type="button";reject.textContent="Reject";
+      const run=async(status,button)=>{verify.disabled=true;reject.disabled=true;button.textContent=status==="verified"?"Verifying…":"Rejecting…";try{await managementRequest(status==="verified"?"verify_payment":"reject_payment",{payment_id:row.id});await loadManagementOverview()}catch(e){alert(e.message||"Could not update payment.");verify.disabled=false;reject.disabled=false;button.textContent=status==="verified"?"Verify":"Reject"}};
+      verify.onclick=()=>run("verified",verify);reject.onclick=()=>run("rejected",reject);
+      actions.append(verify,reject);item.append(info,actions);queue.append(item);
+    });
+  }
+  const exp=$("[data-management-expiring]");if(exp){exp.replaceChildren();const rows=data.expiringSoon||[];if(!rows.length){const e=document.createElement("div");e.className="management-empty";e.textContent="No memberships expire within the next seven days.";exp.append(e)}rows.forEach(row=>{const item=document.createElement("div");item.className="management-list-row";const name=document.createElement("strong");name.textContent=row.full_name;const detail=document.createElement("span");detail.textContent=(row.membership?.plan?.name||"Membership")+" · ends "+managementDate(row.membership?.end_date);item.append(name,detail);exp.append(item)})}
+  const rp=$("[data-management-recent-payments]");if(rp){rp.replaceChildren();const rows=data.recentPayments||[];if(!rows.length){const e=document.createElement("div");e.className="management-empty";e.textContent="No payments recorded yet.";rp.append(e)}rows.forEach(row=>{const item=document.createElement("div");item.className="management-list-row";const name=document.createElement("strong");name.textContent=row.member;const detail=document.createElement("span");detail.textContent=managementMoney(row.amount)+" · "+titleCase(row.status);item.append(name,detail);rp.append(item)})}
+  const rm=$("[data-management-recent-members]");if(rm){rm.replaceChildren();const rows=data.recentMembers||[];if(!rows.length){const e=document.createElement("div");e.className="management-empty";e.textContent="No members have registered yet.";rm.append(e)}rows.forEach(row=>{const card=document.createElement("article");card.className="management-member-card";const initials=document.createElement("span");initials.className="management-member-initials";initials.textContent=initialsFor(row.full_name);const body=document.createElement("div");const name=document.createElement("strong");name.textContent=row.full_name;const meta=document.createElement("span");meta.textContent=(row.username||"No username")+" · "+managementDate(row.created_at);body.append(name,meta);card.append(initials,body);rm.append(card)})}
+}
+async function loadManagementOverview(){const data=await managementRequest("dashboard");renderManagementDashboard(data)}
+
 document.querySelectorAll("[data-sign-out]").forEach(b=>b.addEventListener("click",async()=>{await supabase.auth.signOut();location.href=loginPath}));
 async function safePortalTask(label,task){try{return await task()}catch(error){console.error(`VMC ${label} failed:`,error);const target=document.querySelector("[data-portal-error]");if(target){target.hidden=false;target.textContent="Some VMC information could not be loaded. Your account is still signed in. Refresh or try again shortly."}return null}}loadPortal().catch(async e=>{console.error("VMC authentication gate failed:",e);await supabase.auth.signOut();location.href=loginPath});
