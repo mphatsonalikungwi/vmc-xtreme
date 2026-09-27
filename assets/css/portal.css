@@ -439,3 +439,93 @@
   .success-login-card{padding:20px}
 }
 
+
+/* Registration production pass: strict two-column desktop form + explicit failure state */
+.registration-page .registration-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:start;
+}
+.registration-page .registration-section{
+  padding:clamp(24px,3vw,34px);
+}
+.registration-page .registration-section-heading{
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr);
+  gap:14px;
+  align-items:start;
+}
+.registration-page .registration-section-heading>span{
+  width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center;
+  background:var(--vmc-dark);
+  color:#fff;
+  font-size:.7rem;font-weight:900;
+}
+.registration-page .field{
+  min-width:0;
+}
+.registration-page .field-wide{
+  grid-column:1 / -1;
+}
+.registration-page .registration-actions{
+  margin-top:4px;
+}
+.registration-page .registration-actions .button-large{
+  min-height:54px;
+}
+.registration-page .registration-success,
+.registration-page .registration-failure{
+  max-width:1180px;
+  margin:0 auto;
+}
+.registration-page .registration-failure{
+  padding:clamp(54px,8vw,96px) 0;
+}
+.registration-page .failure-mark{
+  width:62px;height:62px;border-radius:50%;
+  display:grid;place-items:center;
+  background:#fff4f0;
+  border:1px solid #e7c9bf;
+  color:#a94b38;
+  font-size:1.5rem;font-weight:900;
+}
+.registration-page .failure-lead{
+  max-width:720px;
+  color:#69727a;
+  font-size:1.05rem;
+  line-height:1.7;
+}
+.registration-page .failure-card{
+  margin-top:26px;
+  padding:26px;
+  background:#fff;
+  border:1px solid #dfe2e4;
+  border-radius:16px;
+  box-shadow:0 10px 28px rgba(19,28,35,.04);
+}
+.registration-page .failure-card h2{
+  margin:8px 0 8px;
+  color:var(--vmc-ink);
+  font-size:1.25rem;
+}
+.registration-page .failure-card p{
+  margin:0;
+  color:#707980;
+  line-height:1.6;
+}
+.registration-page .failure-actions{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:20px;
+}
+.registration-page .button:disabled{
+  opacity:.58;
+  cursor:wait;
+}
+@media(max-width:760px){
+  .registration-page .registration-grid{grid-template-columns:1fr}
+  .registration-page .field-wide{grid-column:auto}
+  .registration-page .registration-section-heading{grid-template-columns:34px minmax(0,1fr)}
+  .registration-page .failure-actions>*{width:100%;justify-content:center}
+}
