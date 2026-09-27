@@ -1,49 +1,85 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="VMC Xtreme management portal.">
-  <title>Management Portal — VMC Xtreme</title>
-  <link rel="stylesheet" href="../assets/css/app.css">
-  <link rel="stylesheet" href="../assets/css/portal.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="VMC Xtreme management operations portal.">
+<title>VMC Operations — VMC Xtreme</title>
+<link rel="stylesheet" href="../assets/css/app.css">
+<link rel="stylesheet" href="../assets/css/portal.css">
 </head>
 <body class="portal-page management-page">
-  <header class="portal-header">
-    <a class="portal-brand" href="../">VMC XTREME</a>
-    <div class="portal-user">
-      <span data-portal-name></span>
-      <span class="role-badge" data-portal-role></span>
-      <button type="button" class="portal-button" data-sign-out>Sign out</button>
+<header class="portal-header management-header">
+  <button class="portal-menu-button" type="button" data-menu-toggle aria-expanded="false" aria-controls="management-nav">Menu</button>
+  <a class="portal-brand" href="../"><span>VMC / XTREME</span></a>
+  <div class="portal-user">
+    <span class="portal-user-name" data-portal-name></span>
+    <span class="role-badge" data-portal-role>MANAGEMENT</span>
+    <button type="button" class="portal-button" data-sign-out>Sign out</button>
+  </div>
+</header>
+<main class="portal-shell management-shell">
+  <div class="portal-overlay" data-menu-overlay hidden></div>
+  <aside id="management-nav" class="portal-sidebar management-sidebar" aria-label="Management portal">
+    <div class="portal-sidebar-head">
+      <div><p class="portal-label">VMC OPERATIONS</p><p class="portal-sidebar-title">Run the gym.</p></div>
+      <button class="portal-close-button" type="button" data-menu-close aria-label="Close navigation">×</button>
     </div>
-  </header>
-  <main class="portal-shell">
-    <aside class="portal-sidebar" aria-label="Management portal">
-      <p class="portal-label">MANAGEMENT</p>
-      <nav class="portal-nav">
-        <a class="is-active" href="./">Dashboard</a>
-        <a href="./members.html">Members</a>
-        <a href="./payments.html">Payments</a>
-        <a href="./attendance.html">Attendance</a>
-        <a href="./reports.html">Reports</a>
-        <a href="./staff.html">Staff</a>
-        <a href="./settings.html">Settings</a>
-      </nav>
-    </aside>
-    <section class="portal-content">
-      <div class="portal-heading">
-        <p class="eyebrow">MANAGEMENT PORTAL</p>
-        <h1>VMC operations.</h1>
-        <p>Member activity, payments, attendance and management controls are separated from the member experience.</p>
+    <nav class="portal-nav">
+      <a class="is-active" href="./"><span>Dashboard</span><small>VMC pulse</small></a>
+      <a href="./members.html"><span>Members</span><small>Accounts &amp; membership</small></a>
+      <a href="./payments.html"><span>Payments</span><small>Verification queue</small></a>
+      <a href="./attendance.html"><span>Attendance</span><small>Today's training</small></a>
+      <a href="./reports.html"><span>Reports</span><small>Business view</small></a>
+      <a href="./staff.html"><span>Staff</span><small>Access control</small></a>
+      <a href="./settings.html"><span>Settings</span><small>Management controls</small></a>
+    </nav>
+    <div class="portal-sidebar-footer"><span class="portal-label">SECURE</span><button class="portal-sidebar-signout" type="button" data-sign-out>Sign out</button></div>
+  </aside>
+  <section class="portal-content management-content">
+    <div class="portal-data-error" data-portal-error hidden></div>
+    <div class="management-heading">
+      <div>
+        <p class="eyebrow">VMC MANAGEMENT / DASHBOARD</p>
+        <h1>Know what needs<br><em>attention.</em></h1>
+        <p>One operational view for members, payments, attendance and membership health.</p>
       </div>
-      <div class="portal-grid">
-        <article class="portal-card"><span class="card-label">MEMBERS</span><h2 data-member-count>—</h2><p>Active member accounts</p></article>
-        <article class="portal-card"><span class="card-label">PAYMENTS</span><h2 data-payment-count>—</h2><p>Payment records</p></article>
-        <article class="portal-card"><span class="card-label">ATTENDANCE</span><h2 data-attendance-count>—</h2><p>Attendance records</p></article>
-        <article class="portal-card portal-card-wide"><span class="card-label">ACCESS</span><h2 data-portal-role>—</h2><p>Your management role controls which operational areas you can access.</p></article>
+      <div class="management-date"><span>TODAY</span><strong data-management-date>—</strong><small>VMC Xtreme · Lilongwe</small></div>
+    </div>
+
+    <section class="management-kpi-grid" aria-label="VMC key metrics">
+      <article class="management-kpi"><span>MEMBERS</span><strong data-member-count>—</strong><small>Total member accounts</small></article>
+      <article class="management-kpi"><span>ACTIVE</span><strong data-active-member-count>—</strong><small>Currently active</small></article>
+      <article class="management-kpi is-attention"><span>PAYMENTS TO REVIEW</span><strong data-pending-payment-count>—</strong><small>Waiting for verification</small></article>
+      <article class="management-kpi"><span>TODAY'S VISITS</span><strong data-today-attendance-count>—</strong><small>Recorded check-ins</small></article>
+      <article class="management-kpi"><span>EXPIRING</span><strong data-expiring-count>—</strong><small>Within seven days</small></article>
+      <article class="management-kpi"><span>VERIFIED REVENUE</span><strong data-revenue-count>—</strong><small>Recorded in VMC payments</small></article>
+    </section>
+
+    <section class="management-section">
+      <div class="management-section-head"><div><span class="card-label">ACTION QUEUE</span><h2>Payment verification</h2></div><a class="management-text-link" href="./payments.html">Open payments ↗</a></div>
+      <div class="management-queue" data-management-payment-queue>
+        <div class="management-empty">Loading the VMC payment queue…</div>
       </div>
     </section>
-  </main>
-  <script type="module" src="../assets/js/portal.js"></script>
+
+    <div class="management-two-column">
+      <section class="management-section">
+        <div class="management-section-head"><div><span class="card-label">MEMBERSHIP HEALTH</span><h2>Expiring soon</h2></div><a class="management-text-link" href="./members.html">View members ↗</a></div>
+        <div class="management-list" data-management-expiring><div class="management-empty">Loading membership health…</div></div>
+      </section>
+      <section class="management-section">
+        <div class="management-section-head"><div><span class="card-label">CASHFLOW</span><h2>Recent payments</h2></div><a class="management-text-link" href="./payments.html">Payment ledger ↗</a></div>
+        <div class="management-list" data-management-recent-payments><div class="management-empty">Loading payment activity…</div></div>
+      </section>
+    </div>
+
+    <section class="management-section">
+      <div class="management-section-head"><div><span class="card-label">NEW MEMBERS</span><h2>Recent registrations</h2></div><a class="management-text-link" href="./members.html">Member directory ↗</a></div>
+      <div class="management-member-grid" data-management-recent-members><div class="management-empty">Loading recent members…</div></div>
+    </section>
+  </section>
+</main>
+<script type="module" src="../assets/js/portal.js"></script>
 </body>
 </html>
