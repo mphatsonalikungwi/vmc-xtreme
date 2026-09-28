@@ -524,8 +524,6 @@
   cursor:wait;
 }
 @media(max-width:760px){
-  .registration-page .registration-grid{grid-template-columns:1fr}
-  .registration-page .field-wide{grid-column:auto}
   .registration-page .registration-section-heading{grid-template-columns:34px minmax(0,1fr)}
   .registration-page .failure-actions>*{width:100%;justify-content:center}
 }
@@ -585,3 +583,32 @@
 @media(max-width:900px){.management-heading{align-items:flex-start;flex-direction:column}.management-date{width:100%;box-sizing:border-box}.management-two-column{grid-template-columns:1fr}.management-member-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:800px){.management-page .portal-shell{display:block}.management-page .portal-sidebar{background:#080c10}.management-page .portal-content{padding:30px 18px}.management-kpi-grid{grid-template-columns:1fr 1fr}.management-queue-item{align-items:flex-start;flex-direction:column}.management-actions{width:100%}.management-action{flex:1}}
 @media(max-width:560px){.management-page .portal-content{padding:26px 14px}.management-heading h1{font-size:clamp(2.5rem,14vw,4rem)}.management-section{padding:18px}.management-kpi-grid{grid-template-columns:1fr 1fr}.management-kpi{min-height:112px;padding:15px}.management-kpi strong{font-size:1.6rem}.management-member-grid{grid-template-columns:1fr}.management-list-row{align-items:flex-start;flex-direction:column}.management-list-row span{text-align:left}}
+
+/* Registration field grouping: required and optional information remain visibly separate. */
+.registration-page .registration-field-group{
+  display:grid;
+  gap:12px;
+}
+.registration-page .registration-field-group + .registration-field-group{
+  margin-top:24px;
+  padding-top:24px;
+  border-top:1px solid #eceeef;
+}
+.registration-page .registration-field-group-heading{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:16px;
+  color:var(--vmc-ink);
+}
+.registration-page .registration-field-group-heading span{
+  color:#7b848b;
+  font-size:.76rem;
+}
+@media(max-width:560px){
+  .registration-page .registration-field-group-heading{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:4px;
+  }
+}
