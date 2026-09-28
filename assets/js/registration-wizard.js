@@ -217,7 +217,13 @@
     formData.set("phone", normalizedPhone);
     const password = String(formData.get("password") || "");
     const confirmPassword = String(formData.get("confirm_password") || "");
-    if (password !== confirmPassword) throw new Error("Passwords do not match.");
+    if (password !== confirmPassword) {
+      const confirm = form.elements.namedItem("confirm_password");
+      show(0);
+      showFieldError(confirm, "Passwords do not match.");
+      confirm?.focus();
+      throw new Error("Passwords do not match.");
+    }
 
     const response = await fetch(`${VMC_CONFIG.supabaseUrl}/functions/v1/vmc-auth-v2`, {
       method: "POST",
@@ -257,7 +263,6 @@
     document.querySelector("[data-credential-phone]")?.replaceChildren(document.createTextNode(formData.get("phone") || "Your registered phone number"));
 
     document.getElementById("registration-shell").hidden = true;
-    document.getElementById("registration-failure").hidden = true;
     document.getElementById("registration-success").hidden = false;
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
