@@ -71,7 +71,7 @@ async function loadMembers() {
   const render = () => {
     const q = String(search?.value || "").trim().toLowerCase();
     const filtered = rows.filter(r => !q || [r.full_name,r.username,r.phone,r.email].some(v => String(v || "").toLowerCase().includes(q)));
-    renderRows(target, filtered, "No member accounts match this search.", memberRow);
+    renderRows(target, filtered, "No member accounts match this search.", row => memberRow(row, data.role));
     const count = $("[data-members-count]");
     if (count) count.textContent = filtered.length + " member" + (filtered.length === 1 ? "" : "s");
   };
@@ -79,7 +79,7 @@ async function loadMembers() {
   render();
 }
 
-function memberRow(row) {
+function memberRow(row, role) {
   const item = document.createElement("article");
   item.className = "management-record";
   const avatar = document.createElement("div"); avatar.className = "management-avatar"; avatar.textContent = initials(row.full_name);
@@ -91,23 +91,28 @@ function memberRow(row) {
   detail.textContent = m ? `${m.plan?.name || "Membership"} · ${m.training_mode || "No training mode"} · ${String(m.status || "").toUpperCase()} · ends ${date(m.end_date)}` : "No membership recorded";
   body.append(h, meta, detail);
   const actions = document.createElement("div"); actions.className = "management-record-actions";
-  const status = button(row.account_status === "active" ? "Suspend" : "Activate");
-  status.onclick = async () => {
-    status.disabled = true;
-    try {
-      await request("set_account_status", { user_id:row.id, status:row.account_status === "active" ? "suspended" : "active" });
-      notice("Member status updated.");
-      await loadMembers();
-    } catch (e) { notice(e.message, true); status.disabled = false; }
-  };
-  const del = button("Delete", "management-action is-danger");
-  del.onclick = async () => {
-    if (!confirm(`Delete ${row.full_name}'s VMC account? This cannot be undone.`)) return;
-    del.disabled = true;
-    try { await request("delete_account", { user_id:row.id }); notice("Member account deleted."); await loadMembers(); }
-    catch (e) { notice(e.message, true); del.disabled = false; }
-  };
-  actions.append(status, del);
+  if (role === "manager" || role === "owner") {
+    const status = button(row.account_status === "active" ? "Suspend" : "Activate");
+    status.onclick = async () => {
+      status.disabled = true;
+      try {
+        await request("set_account_status", { user_id:row.id, status:row.account_status === "active" ? "suspended" : "active" });
+        notice("Member status updated.");
+        await loadMembers();
+      } catch (e) { notice(e.message, true); status.disabled = false; }
+    };
+    actions.append(status);
+  }
+  if (role === "owner") {
+    const del = button("Delete", "management-action is-danger");
+    del.onclick = async () => {
+      if (!confirm(`Delete ${row.full_name}'s VMC account? This cannot be undone.`)) return;
+      del.disabled = true;
+      try { await request("delete_account", { user_id:row.id }); notice("Member account deleted."); await loadMembers(); }
+      catch (e) { notice(e.message, true); del.disabled = false; }
+    };
+    actions.append(del);
+  }
   item.append(avatar, body, actions);
   return item;
 }
