@@ -612,3 +612,35 @@
     gap:4px;
   }
 }
+
+/* Registration pages: keep the existing visual system while making each step a focused two-column page. */
+.registration-page .registration-step[hidden]{display:none}
+.registration-page .registration-step-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:12px;
+  margin-top:28px;
+  padding-top:22px;
+  border-top:1px solid #eceeef;
+}
+.registration-page .registration-step-actions .button{min-width:190px}
+.registration-page .duration-calculation{
+  display:grid;
+  gap:5px;
+  margin-top:18px;
+  padding:16px 18px;
+  border:1px solid #e1e5e7;
+  border-radius:14px;
+  background:#fafbfb;
+}
+.registration-page .duration-calculation strong{color:var(--vmc-ink)}
+.registration-page .duration-calculation span{font-weight:800;color:var(--vmc-ink)}
+.registration-page .duration-calculation small{color:#737c83}
+@media(max-width:560px){
+  .registration-page .registration-step-actions{
+    flex-direction:column-reverse;
+    align-items:stretch;
+  }
+  .registration-page .registration-step-actions .button{width:100%}
+}
