@@ -251,140 +251,25 @@ const referenceInput = registrationForm?.querySelector('[name="payment_reference
 const paymentMethodInput = registrationForm?.querySelector('[name="payment_method"]');
 const basePrices = { day: { single: 2000, double: 3000 }, week: { single: 8000, double: 10000 }, month: { single: 30000, double: 35000 } };
 
-const registrationSteps = [...document.querySelectorAll("#member-register-form .registration-step")];
-let currentRegistrationStep = 0;
-
-function validateRegistrationStep(step) {
-  if (!step) return false;
-  const fields = [...step.querySelectorAll("input, select, textarea")].filter((field) => !field.disabled);
-  for (const field of fields) {
-    if (!field.checkValidity()) {
-      field.reportValidity();
-      return false;
-    }
-  }
-  const password = step.querySelector('[name="password"]');
-  const confirmPassword = step.querySelector('[name="confirm_password"]');
-  if (password && confirmPassword && password.value !== confirmPassword.value) {
-    confirmPassword.setCustomValidity("Passwords do not match.");
-    confirmPassword.reportValidity();
-    confirmPassword.setCustomValidity("");
-    return false;
-  }
-  return true;
-}
-
-function showRegistrationStep(index) {
-  if (!registrationSteps.length) return;
-  currentRegistrationStep = Math.max(0, Math.min(index, registrationSteps.length - 1));
-  registrationSteps.forEach((step, i) => {
-    step.hidden = i !== currentRegistrationStep;
-  });
-
-  document.querySelectorAll("[data-registration-progress]").forEach((card, i) => {
-    const active = i === currentRegistrationStep;
-    card.classList.toggle("is-active", active);
-    card.setAttribute("aria-current", active ? "step" : "false");
-  });
-
-  if (currentRegistrationStep === 2) {
-    updateRegistrationPrice();
-    updateDurationCalculation();
-  }
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-document.querySelectorAll("#member-register-form [data-next-step]").forEach((button) => {
-  button.addEventListener("click", (event) => {
-    event.preventDefault();
-    const step = registrationSteps[currentRegistrationStep];
-    if (validateRegistrationStep(step)) showRegistrationStep(currentRegistrationStep + 1);
-  });
-});
-
-document.querySelectorAll("#member-register-form [data-prev-step]").forEach((button) => {
-  button.addEventListener("click", (event) => {
-    event.preventDefault();
-    showRegistrationStep(currentRegistrationStep - 1);
-  });
-});
-
-document.querySelectorAll("[data-registration-progress]").forEach((card) => {
-  card.addEventListener("click", (event) => {
-    event.preventDefault();
-    const target = Number(card.dataset.registrationProgress) - 1;
-    if (target <= currentRegistrationStep) showRegistrationStep(target);
-  });
-});
-
-registrationForm?.addEventListener("input", updateRegistrationPrice);
-registrationForm?.addEventListener("change", updateRegistrationPrice);
-paymentMethodInput?.addEventListener("change", () => {
-  referenceInput.required = false;
-  referenceInput.placeholder = paymentMethodInput.value === "Cash"
-    ? "Optional cash receipt / note"
-    : "Optional transaction / receipt reference";
-});
-
-
-supabase.auth.getSession().then(({ data: initialSession }) => {
-  if ($("#password-form") && !initialSession.session) go("./member-login.html");
-});
-
-function calculateMembershipPeriod(count, unit) {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  if (unit === "day") end.setDate(end.getDate() + count - 1);
-  else if (unit === "week") end.setDate(end.getDate() + count * 7 - 1);
-  else if (unit === "month") {
-    const originalDay = end.getDate();
-    end.setMonth(end.getMonth() + count);
-    end.setDate(Math.min(originalDay, new Date(end.getFullYear(), end.getMonth(), 0).getDate()) - 1);
-  }
-  return { start, end };
-}
-
-function formatMembershipDate(date) {
-  return date.toLocaleDateString("en-MW", { day: "numeric", month: "short", year: "numeric" });
-}
 function updateRegistrationPrice() {
   if (!registrationForm || !pricePreview) return;
-  const countInput = registrationForm.elements.namedItem("duration_count");
-  const unitInput = registrationForm.elements.namedItem("duration_unit");
-  const count = Math.max(1, Math.floor(Number(countInput?.value || 1)));
-  const unit = unitInput?.value || "month";
+  const count = Math.max(1, Math.floor(Number(registrationForm.elements.namedItem("duration_count")?.value || 1)));
+  const unit = registrationForm.elements.namedItem("duration_unit")?.value || "month";
   const session = registrationForm.querySelector('input[name="session_type"]:checked')?.value || "single";
   const basePrice = basePrices[unit]?.[session] || 0;
-  const amount = basePrice * count;
-  pricePreview.textContent = basePrice ? `K${amount.toLocaleString("en-MW")}` : "K0";
+  pricePreview.textContent = basePrice ? `K${(basePrice * count).toLocaleString("en-MW")}` : "K0";
   priceExplanation.textContent = basePrice
     ? `${count} ${unit}${count === 1 ? "" : "s"} · ${session === "single" ? "Single" : "Double"} sessions · K${basePrice.toLocaleString("en-MW")} per ${unit}`
     : "Choose a valid duration and session access";
 }
+
 registrationForm?.addEventListener("input", updateRegistrationPrice);
 registrationForm?.addEventListener("change", updateRegistrationPrice);
 paymentMethodInput?.addEventListener("change", () => {
+  if (!referenceInput) return;
   referenceInput.required = false;
   referenceInput.placeholder = paymentMethodInput.value === "Cash"
     ? "Optional cash receipt / note"
     : "Optional transaction / receipt reference";
 });
-
-function updateDurationCalculation() {
-  if (!registrationForm) return;
-  const count = Math.max(1, Math.floor(Number(registrationForm.elements.namedItem("duration_count")?.value || 1)));
-  const unit = registrationForm.elements.namedItem("duration_unit")?.value || "month";
-  const label = `${count} ${unit}${count === 1 ? "" : "s"}`;
-  const period = calculateMembershipPeriod(count, unit);
-  const summary = $("#duration-calculation");
-  const periodText = $("#duration-period");
-  if (summary) summary.textContent = `${label} · calculated automatically`;
-  if (periodText) periodText.textContent = `Estimated period if verified today: ${formatMembershipDate(period.start)} – ${formatMembershipDate(period.end)}.`;
-}
-
-registrationForm?.addEventListener("input", updateDurationCalculation);
-registrationForm?.addEventListener("change", updateDurationCalculation);
-updateRegistrationPrice();
-updateDurationCalculation();
-showRegistrationStep(0);
+;
