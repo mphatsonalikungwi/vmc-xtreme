@@ -245,13 +245,6 @@
       : rawPhone.replace(/[\s()-]/g, "");
     formData.set("phone", normalizedPhone);
     const password = String(formData.get("password") || "");
-    const confirmPassword = String(formData.get("confirm_password") || "");
-    if (password !== confirmPassword) {
-      const confirm = form.elements.namedItem("confirm_password");
-      showFieldError(confirm, "Passwords do not match.");
-      confirm?.focus();
-      throw new Error("Passwords do not match.");
-    }
 
     const response = await fetch(`${VMC_CONFIG.supabaseUrl}/functions/v1/vmc-auth-v2`, {
       method: "POST",
