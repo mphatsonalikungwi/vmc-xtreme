@@ -255,12 +255,17 @@ const paymentMethodInput = registrationForm?.querySelector('[name="payment_metho
 const basePrices = { day: { single: 2000, double: 3000 }, week: { single: 8000, double: 10000 }, month: { single: 30000, double: 35000 } };
 function updateRegistrationPrice() {
   if (!registrationForm || !pricePreview) return;
-  const count = Math.max(1, Number(registrationForm.duration_count.value || 1));
-  const unit = registrationForm.duration_unit.value;
+  const countInput = registrationForm.elements.namedItem("duration_count");
+  const unitInput = registrationForm.elements.namedItem("duration_unit");
+  const count = Math.max(1, Math.floor(Number(countInput?.value || 1)));
+  const unit = unitInput?.value || "month";
   const session = registrationForm.querySelector('input[name="session_type"]:checked')?.value || "single";
-  const amount = (basePrices[unit]?.[session] || 0) * count;
-  pricePreview.textContent = `K${amount.toLocaleString("en-MW")}`;
-  priceExplanation.textContent = `${count} ${unit}${count === 1 ? "" : "s"} · ${session === "single" ? "Single" : "Double"} sessions`;
+  const basePrice = basePrices[unit]?.[session] || 0;
+  const amount = basePrice * count;
+  pricePreview.textContent = basePrice ? `K${amount.toLocaleString("en-MW")}` : "K0";
+  priceExplanation.textContent = basePrice
+    ? `${count} ${unit}${count === 1 ? "" : "s"} · ${session === "single" ? "Single" : "Double"} sessions · K${basePrice.toLocaleString("en-MW")} per ${unit}`
+    : "Choose a valid duration and session access";
 }
 registrationForm?.addEventListener("input", updateRegistrationPrice);
 registrationForm?.addEventListener("change", updateRegistrationPrice);
