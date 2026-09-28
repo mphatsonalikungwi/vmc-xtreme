@@ -730,3 +730,39 @@
   }
   .registration-page .registration-step-actions .button{width:100%}
 }
+
+/* Registration controls — compact, intentional hierarchy */
+.registration-page .registration-step-actions .button-primary{
+  background:#0b1218;
+  border-color:#0b1218;
+  color:#fff;
+}
+.registration-page .registration-step-actions .button-primary:hover{
+  background:#18242e;
+  border-color:#18242e;
+}
+.registration-page .registration-step-actions .button{
+  min-width:0;
+  padding:10px 16px;
+  font-size:.82rem;
+  line-height:1.2;
+  border-radius:9px;
+}
+.registration-page .registration-step-actions .button-primary{
+  min-width:78px;
+}
+.registration-page .registration-progress{
+  gap:8px;
+  margin:22px 0 16px;
+}
+.registration-page .registration-progress-card{
+  grid-template-columns:auto 1fr;
+  padding:11px 13px;
+  border-radius:11px;
+}
+.registration-page .registration-progress-card>span{
+  width:28px;height:28px;
+  font-size:.62rem;
+}
+.registration-page .registration-progress-card strong{font-size:.74rem}
+.registration-page .registration-progress-card small{font-size:.64rem}
