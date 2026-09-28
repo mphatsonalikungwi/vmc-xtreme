@@ -103,7 +103,6 @@ async function register(body: Record<string, unknown>) {
   if (!DURATION_UNITS.includes(durationUnit as typeof DURATION_UNITS[number]) || durationCount < 1 || durationCount > 3650) return json({ error: "Choose a valid membership duration." }, 400);
   if (!SESSION_TYPES.includes(sessionType as typeof SESSION_TYPES[number])) return json({ error: "Choose a valid session type." }, 400);
   if (!PAYMENT_METHODS.includes(paymentMethod as typeof PAYMENT_METHODS[number])) return json({ error: "Choose a valid payment method." }, 400);
-  if (paymentMethod !== "Cash" && !paymentReference) return json({ error: "Enter the payment reference for this payment method." }, 400);
   if (!rulesAccepted || rulesVersion !== "VMC Rules v1") return json({ error: "Please accept the current VMC Xtreme rules before creating your account." }, 400);
 
   const { data: basePlan, error: planError } = await admin
