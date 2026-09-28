@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Join VMC Xtreme Fitness."><title>Join VMC Xtreme — Member Registration</title>
-<link rel="stylesheet" href="../assets/css/app.css"><link rel="stylesheet" href="../assets/css/portal.css?v=20260928-5">
+<link rel="stylesheet" href="../assets/css/app.css"><link rel="stylesheet" href="../assets/css/portal.css?v=20260928-6">
 </head>
 <body class="portal-page registration-page">
 <header class="portal-header"><a class="portal-brand" href="../">VMC XTREME</a><a class="portal-back" href="../">Back to VMC Xtreme</a></header>
@@ -17,6 +17,7 @@
 </nav>
 <form id="member-register-form" class="registration-form">
 <section class="registration-section registration-step" data-step="1">
+<p class="registration-form-alert" data-form-alert role="alert" aria-live="assertive" hidden></p>
 <div class="registration-section-heading"><span>01</span><div><h2>Required information</h2><p>These details are required to create your VMC member account.</p></div></div>
 <div class="registration-grid">
 <label class="field">Full name <span class="required">*</span><input name="full_name" autocomplete="name" maxlength="120" placeholder="e.g. Mphatso Nalikungwi" required></label>
@@ -49,7 +50,7 @@
 <label class="field">Payment reference <span class="optional" id="reference-optional">Optional</span><input name="payment_reference" maxlength="120" placeholder="Transaction / receipt reference"></label>
 </div>
 <div class="price-preview"><span>Estimated membership</span><strong id="price-preview">Choose membership</strong><small id="price-explanation">Select duration and session access to calculate your membership price</small></div>
-<div class="duration-calculation"><strong>Membership duration</strong><span id="duration-calculation">Choose a duration to calculate your membership period</span><small id="duration-period">Your membership dates will be confirmed after VMC verifies your payment.</small></div>
+<div class="duration-calculation"><strong>Membership duration</strong><span id="duration-calculation">Choose a duration to see your membership period</span><small id="duration-period">Your membership dates will be confirmed after VMC verifies your payment.</small></div>
 <div class="registration-rules-card">
 <strong>VMC rules &amp; membership terms</strong>
 <label class="rules-consent"><input type="checkbox" name="rules_accepted" value="true" required><span>I agree to the <a href="../#about">VMC rules and membership terms</a> and understand that my membership remains under review until VMC verifies my payment.</span></label>
@@ -59,26 +60,11 @@
 </form></section>
 <section id="registration-success" class="registration-success" hidden>
 <div class="success-mark">✓</div><p class="eyebrow">WELCOME TO VMC</p><h1>Your VMC account is ready.</h1><p class="success-lead">Your registration has been received and your membership is now <strong>under VMC payment review</strong>.</p>
-<div class="success-grid"><article class="success-card success-card-primary"><span>YOUR VMC USERNAME</span><strong data-credential-username></strong><small>This is your VMC username.</small></article><article class="success-card"><span>MEMBERSHIP STATUS</span><strong>Waiting Review</strong><small>VMC is reviewing your registration and payment before activation.</small></article></div><div class="success-login-card"><span class="card-label">HOW YOU CAN LOG IN</span><h2>Your VMC sign-in identity</h2><div class="success-login-grid"><div><strong>Email</strong><p data-credential-email>If you provided one</p></div><div><strong>VMC Username</strong><p data-credential-username-login></p><small>You can change this after your membership is active.</small></div><div><strong>Registered phone</strong><p data-credential-phone>Use the phone number you registered.</p></div></div><p class="success-password-note">Use the password you created during registration. You can change it from Account &gt; Settings after signing in.</p></div>
+<div class="success-grid"><article class="success-card success-card-primary"><span>VMC USERNAME</span><strong data-credential-username></strong><small>This is your VMC username.</small></article><article class="success-card"><span>MEMBERSHIP</span><strong>Waiting Review</strong><small>VMC is reviewing your registration and payment before activation.</small></article></div><div class="success-login-card"><span class="card-label">HOW TO SIGN IN</span><h2>Your sign-in details</h2><div class="success-login-grid"><div><strong>Email</strong><p data-credential-email>If you provided one</p></div><div><strong>VMC Username</strong><p data-credential-username-login></p><small>Your VMC username</small></div><div><strong>Registered phone</strong><p data-credential-phone>Use the phone number you registered.</p></div></div><p class="success-password-note">Use the password you created when you registered.</p></div>
 <div class="login-guide"><div><span>01</span><p><strong>Choose your sign-in identity</strong><br>Email, VMC username or your registered phone number.</p></div><div><span>02</span><p><strong>Use your password</strong><br>Sign in with the password you created during registration.</p></div><div><span>03</span><p><strong>Wait for activation</strong><br>Your membership becomes active after VMC verifies the payment.</p></div></div>
 <div class="success-actions"><a class="button button-primary button-large" href="./member-login.html">Continue to Member Sign In</a><a class="button button-secondary" href="../">Return to VMC Xtreme</a></div>
 </section>
 </main>
-<section id="registration-failure" class="registration-failure" hidden>
-<div class="failure-mark">!</div>
-<p class="eyebrow">REGISTRATION NEEDS ATTENTION</p>
-<h1>We could not complete your registration.</h1>
-<p class="failure-lead" data-registration-failure-message>Something prevented VMC from creating the account.</p>
-<div class="failure-card">
-<span class="card-label">WHAT TO DO NEXT</span>
-<h2>Your information has not been confirmed as a VMC account.</h2>
-<p>Return to the registration form, check the highlighted details and submit again. If the problem continues, contact VMC before making another payment.</p>
-</div>
-<div class="failure-actions">
-<button class="button button-primary button-large" type="button" data-registration-retry>Return to registration</button>
-<a class="button button-secondary" href="../">Return to VMC Xtreme</a>
-</div>
-</section>
-<script src="../assets/js/registration-wizard.js?v=20260928-4"></script>
+<script src="../assets/js/registration-wizard.js?v=20260928-5"></script>
 <script type="module" src="../assets/js/auth.js?v=20260928-5"></script>
 </body></html>
