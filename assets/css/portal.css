@@ -880,7 +880,8 @@
   line-height:1.25;
   font-weight:800;
 }
-.registration-page .field.is-invalid .field-error{
+.registration-page .field.is-invalid .field-error,
+.registration-page .rules-consent.is-invalid .field-error{
   display:block;
 }
 .registration-page .field:has(input[required]),
