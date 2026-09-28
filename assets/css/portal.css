@@ -433,12 +433,98 @@
   .success-login-grid{grid-template-columns:1fr}
 }
 @media(max-width:560px){
+  .registration-page .registration-progress{grid-template-columns:1fr}
+  .registration-page .registration-progress-card{grid-template-columns:auto 1fr}
+  .registration-page .registration-step-actions{flex-wrap:wrap}
+  .registration-page .registration-step-actions .button{flex:1 1 180px}
+  .registration-page .registration-step-hint{width:100%;margin-right:0;order:-1}
   .member-portal-page .portal-content{padding:26px 14px}
   .member-portal-page .member-hero-card{padding:20px}
   .registration-section{padding:22px}
   .success-login-card{padding:20px}
 }
 
+
+/* Registration wizard: clear three-step navigation */
+.registration-page .registration-progress{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin:28px 0 18px;
+}
+.registration-page .registration-progress-card{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  column-gap:12px;
+  align-items:center;
+  padding:16px 18px;
+  border:1px solid #dfe2e4;
+  border-radius:14px;
+  background:rgba(255,255,255,.88);
+  color:var(--vmc-ink);
+  text-decoration:none;
+  box-shadow:0 8px 24px rgba(19,28,35,.035);
+  transition:border-color .18s ease,background .18s ease,transform .18s ease;
+}
+.registration-page .registration-progress-card:hover{transform:translateY(-1px);border-color:#c8d0d5}
+.registration-page .registration-progress-card>span{
+  grid-row:1 / span 2;
+  width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center;
+  background:#eef1f2;
+  color:#657078;
+  font-size:.68rem;font-weight:900;
+}
+.registration-page .registration-progress-card strong{
+  font-size:.82rem;
+  line-height:1.2;
+}
+.registration-page .registration-progress-card small{
+  margin-top:3px;
+  color:#7b858c;
+  font-size:.72rem;
+}
+.registration-page .registration-progress-card.is-active{
+  border-color:#1d2b35;
+  background:#0b1218;
+  color:#fff;
+  box-shadow:0 12px 30px rgba(11,18,24,.12);
+}
+.registration-page .registration-progress-card.is-active>span{
+  background:#e2c887;
+  color:#0b1218;
+}
+.registration-page .registration-progress-card.is-active small{color:#aab4bb}
+.registration-page .registration-step-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:12px;
+  margin-top:28px;
+  padding-top:22px;
+  border-top:1px solid #eceeef;
+}
+.registration-page .registration-step-actions .button{min-width:150px}
+.registration-page .registration-step-hint{
+  margin-right:auto;
+  color:#7a848b;
+  font-size:.76rem;
+  font-weight:700;
+  letter-spacing:.02em;
+}
+.registration-page .registration-rules-card{
+  margin-top:20px;
+  padding:20px;
+  border:1px solid #dfe2e4;
+  border-radius:14px;
+  background:#f7f8f8;
+}
+.registration-page .registration-rules-card>strong{
+  display:block;
+  margin-bottom:12px;
+  color:var(--vmc-ink);
+}
+.registration-page .registration-rules-card .rules-consent{margin:0}
 
 /* Registration production pass: strict two-column desktop form + explicit failure state */
 .registration-page .registration-grid{
