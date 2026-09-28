@@ -68,17 +68,30 @@
 
   function clearFieldErrors(step) {
     step.querySelectorAll(".is-invalid").forEach(field => field.classList.remove("is-invalid"));
+    step.querySelectorAll(".field-error").forEach(error => error.remove());
     const alert = document.querySelector("[data-form-alert]");
     if (alert) { alert.hidden = true; alert.textContent = ""; }
   }
 
   function showFieldError(field, message) {
+    if (!field) return;
     field.classList.add("is-invalid");
-    const alert = document.querySelector("[data-form-alert]");
-    if (alert) {
-      alert.textContent = message;
-      alert.hidden = false;
+    let error = field.querySelector(".field-error");
+    if (!error) {
+      error = document.createElement("small");
+      error.className = "field-error";
+      field.appendChild(error);
     }
+    error.textContent = message;
+    error.hidden = false;
+    const input = field.querySelector("input,select,textarea");
+    if (input) {
+      const errorId = `field-error-${input.name || Math.random().toString(36).slice(2)}`;
+      error.id = errorId;
+      input.setAttribute("aria-describedby", errorId);
+    }
+    const alert = document.querySelector("[data-form-alert]");
+    if (alert) { alert.hidden = true; alert.textContent = ""; }
   }
 
   function valid(step) {
@@ -167,23 +180,41 @@
     const message = error?.message || "We could not complete your registration. Please check your details and try again.";
     const shell = document.getElementById("registration-shell");
     const success = document.getElementById("registration-success");
-    const alert = document.querySelector("[data-form-alert]");
     if (shell) shell.hidden = false;
     if (success) success.hidden = true;
-    show(0);
+
     const phone = form.elements.namedItem("phone");
-    if (/phone number is already registered/i.test(message)) {
-      showFieldError(phone, "That phone number is already registered with VMC.");
-    } else if (alert) {
-      alert.textContent = message;
-      alert.hidden = false;
+    const fieldMessages = [
+      [/phone number is already registered/i, phone, "That phone number is already registered with VMC."],
+      [/enter a valid phone number/i, phone, "Enter a valid phone number, for example +265 991 203 382."]
+    ];
+    const match = fieldMessages.find(([pattern]) => pattern.test(message));
+
+    if (match) {
+      show(0);
+      showFieldError(match[1], match[2]);
+      match[1]?.focus();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
     }
+
+    setMessage(
+      /failed to fetch|networkerror|load failed/i.test(message)
+        ? "We could not reach VMC. Please check your internet connection and try again."
+        : message,
+      true
+    );
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function submitRegistration() {
     const { VMC_CONFIG } = await import("./config.js");
     const formData = new FormData(form);
+    const rawPhone = String(formData.get("phone") || "").trim();
+    const normalizedPhone = /^0[789]\d{8}$/.test(rawPhone.replace(/\s+/g, ""))
+      ? `+265${rawPhone.replace(/\s+/g, "").slice(1)}`
+      : rawPhone.replace(/[\s()-]/g, "");
+    formData.set("phone", normalizedPhone);
     const password = String(formData.get("password") || "");
     const confirmPassword = String(formData.get("confirm_password") || "");
     if (password !== confirmPassword) throw new Error("Passwords do not match.");
