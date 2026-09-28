@@ -270,8 +270,9 @@ function updateRegistrationPrice() {
 registrationForm?.addEventListener("input", updateRegistrationPrice);
 registrationForm?.addEventListener("change", updateRegistrationPrice);
 paymentMethodInput?.addEventListener("change", () => {
-  const digital = paymentMethodInput.value !== "Cash";
-  referenceInput.required = digital;
-  referenceInput.placeholder = digital ? "Transaction / receipt reference" : "Optional cash receipt / note";
+  referenceInput.required = false;
+  referenceInput.placeholder = paymentMethodInput.value === "Cash"
+    ? "Optional cash receipt / note"
+    : "Optional transaction / receipt reference";
 });
 updateRegistrationPrice();
