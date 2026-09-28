@@ -872,13 +872,16 @@
   border-color:#c83b28 !important;
   box-shadow:0 0 0 2px rgba(200,59,40,.08);
 }
-.registration-page .field.is-invalid::after{
-  content:"Please check this field.";
+.registration-page .field-error{
   display:block;
   margin-top:4px;
   color:#b33220;
   font-size:.7rem;
+  line-height:1.25;
   font-weight:800;
+}
+.registration-page .field.is-invalid .field-error{
+  display:block;
 }
 .registration-page .field:has(input[required]),
 .registration-page .field:has(select[required]){
