@@ -121,6 +121,21 @@
   form.addEventListener("change", updateMembershipPreview);
 
 
+  function setupPasswordToggles() {
+    form.querySelectorAll("[data-password-toggle]").forEach(button => {
+      if (button.dataset.ready === "true") return;
+      const input = button.parentElement?.querySelector('input[type="password"]');
+      if (!input) return;
+      button.dataset.ready = "true";
+      button.addEventListener("click", () => {
+        const showing = input.type === "text";
+        input.type = showing ? "password" : "text";
+        button.textContent = showing ? "Show" : "Hide";
+        button.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+      });
+    });
+  }
+
   function setMessage(text, error = false) {
     const el = form.querySelector("[data-message]");
     if (!el) return;
@@ -213,5 +228,6 @@
     }
   });
 
+  setupPasswordToggles();
   show(0);
 })();
