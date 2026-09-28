@@ -143,60 +143,6 @@ function showRegistrationFailure(error) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-$("#member-register-form")?.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const formElement = event.currentTarget;
-  const submitButton = formElement.querySelector('[type="submit"]');
-  message("Creating your account and submitting your membership…");
-  if (submitButton) {
-    submitButton.disabled = true;
-    submitButton.dataset.originalText = submitButton.textContent;
-    submitButton.textContent = "Creating your account…";
-  }
-  const form = new FormData(formElement);
-  const password = String(form.get("password") || "");
-  const confirmPassword = String(form.get("confirm_password") || "");
-  if (password !== confirmPassword) {
-    message("Passwords do not match.", true);
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = submitButton.dataset.originalText || "Create my VMC account";
-    }
-    return;
-  }
-  try {
-    const data = await authRequest("register", {
-      full_name: form.get("full_name"), password,
-      phone: form.get("phone"), email: form.get("email"),
-      emergency_contact: form.get("emergency_contact"), gender: form.get("gender"),
-      date_of_birth: form.get("date_of_birth"), training_mode: form.get("training_mode"),
-      duration_count: Number(form.get("duration_count")), duration_unit: form.get("duration_unit"),
-      session_type: form.get("session_type"), payment_method: form.get("payment_method"),
-      payment_reference: form.get("payment_reference"),
-      rules_accepted: form.get("rules_accepted") === "true",
-      rules_version: "VMC Rules v1"
-    });
-    const username = String(data.username || "").trim();
-    if (!username) throw new Error("VMC created the account response without a username. Please contact VMC before trying again.");
-    $("[data-credential-username]")?.replaceChildren(document.createTextNode(username));
-    $("[data-credential-username-login]")?.replaceChildren(document.createTextNode(username));
-    $("[data-credential-email]")?.replaceChildren(document.createTextNode(form.get("email") ? form.get("email") : "No email was provided"));
-    $("[data-credential-phone]")?.replaceChildren(document.createTextNode(form.get("phone") || "Your registered phone number"));
-    $("#registration-shell").hidden = true;
-    $("#registration-failure").hidden = true;
-    $("#registration-success").hidden = false;
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  } catch (error) {
-    console.error("VMC registration failed:", error);
-    showRegistrationFailure(error);
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = submitButton.dataset.originalText || "Create my VMC account";
-    }
-  }
-});
-
 $("[data-registration-retry]")?.addEventListener("click", () => {
   $("#registration-failure").hidden = true;
   $("#registration-success").hidden = true;
@@ -244,32 +190,81 @@ $("#password-form")?.addEventListener("submit", async (event) => {
   go(destination);
 });
 
+
 const registrationForm = $("#member-register-form");
-const pricePreview = $("#price-preview");
-const priceExplanation = $("#price-explanation");
-const referenceInput = registrationForm?.querySelector('[name="payment_reference"]');
+const paymentReferenceInput = registrationForm?.querySelector('[name="payment_reference"]');
 const paymentMethodInput = registrationForm?.querySelector('[name="payment_method"]');
-const basePrices = { day: { single: 2000, double: 3000 }, week: { single: 8000, double: 10000 }, month: { single: 30000, double: 35000 } };
-
-function updateRegistrationPrice() {
-  if (!registrationForm || !pricePreview) return;
-  const count = Math.max(1, Math.floor(Number(registrationForm.elements.namedItem("duration_count")?.value || 1)));
-  const unit = registrationForm.elements.namedItem("duration_unit")?.value || "month";
-  const session = registrationForm.querySelector('input[name="session_type"]:checked')?.value || "single";
-  const basePrice = basePrices[unit]?.[session] || 0;
-  pricePreview.textContent = basePrice ? `K${(basePrice * count).toLocaleString("en-MW")}` : "K0";
-  priceExplanation.textContent = basePrice
-    ? `${count} ${unit}${count === 1 ? "" : "s"} · ${session === "single" ? "Single" : "Double"} sessions · K${basePrice.toLocaleString("en-MW")} per ${unit}`
-    : "Choose a valid duration and session access";
-}
-
-registrationForm?.addEventListener("input", updateRegistrationPrice);
-registrationForm?.addEventListener("change", updateRegistrationPrice);
 paymentMethodInput?.addEventListener("change", () => {
-  if (!referenceInput) return;
-  referenceInput.required = false;
-  referenceInput.placeholder = paymentMethodInput.value === "Cash"
+  if (!paymentReferenceInput) return;
+  paymentReferenceInput.required = false;
+  paymentReferenceInput.placeholder = paymentMethodInput.value === "Cash"
     ? "Optional cash receipt / note"
     : "Optional transaction / receipt reference";
 });
-;
+
+async function submitMemberRegistration(formElement) {
+  const submitButton = formElement.querySelector('[type="submit"]');
+  const form = new FormData(formElement);
+  const password = String(form.get("password") || "");
+  const confirmPassword = String(form.get("confirm_password") || "");
+  if (password !== confirmPassword) throw new Error("Passwords do not match.");
+
+  const response = await fetch(authUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: VMC_CONFIG.supabasePublishableKey },
+    body: JSON.stringify({
+      action: "register",
+      full_name: form.get("full_name"),
+      password,
+      phone: form.get("phone"),
+      email: form.get("email"),
+      emergency_contact: form.get("emergency_contact"),
+      gender: form.get("gender"),
+      date_of_birth: form.get("date_of_birth"),
+      training_mode: form.get("training_mode"),
+      duration_count: Number(form.get("duration_count")),
+      duration_unit: form.get("duration_unit"),
+      session_type: form.get("session_type"),
+      payment_method: form.get("payment_method"),
+      payment_reference: form.get("payment_reference"),
+      rules_accepted: form.get("rules_accepted") === "true",
+      rules_version: "VMC Rules v1"
+    })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "We could not create your VMC account.");
+
+  const username = String(data.username || "").trim();
+  if (!username) throw new Error("VMC created the account without returning a username. Please contact VMC.");
+  $("[data-credential-username]")?.replaceChildren(document.createTextNode(username));
+  $("[data-credential-username-login]")?.replaceChildren(document.createTextNode(username));
+  $("[data-credential-email]")?.replaceChildren(document.createTextNode(form.get("email") || "No email was provided"));
+  $("[data-credential-phone]")?.replaceChildren(document.createTextNode(form.get("phone") || "Your registered phone number"));
+  $("#registration-shell").hidden = true;
+  $("#registration-failure").hidden = true;
+  $("#registration-success").hidden = false;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+$("#member-register-form")?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const submitButton = formElement.querySelector('[type="submit"]');
+  message("Creating your account and submitting your membership…");
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.dataset.originalText = submitButton.textContent;
+    submitButton.textContent = "Creating your account…";
+  }
+  try {
+    await submitMemberRegistration(formElement);
+  } catch (error) {
+    console.error("VMC registration failed:", error);
+    showRegistrationFailure(error);
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = submitButton.dataset.originalText || "Create my VMC account";
+    }
+  }
+});
