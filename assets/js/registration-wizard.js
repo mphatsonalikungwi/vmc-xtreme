@@ -62,23 +62,43 @@
       day: "numeric", month: "short", year: "numeric"
     });
     const unitLabel = unit === "day" ? "day" : unit === "week" ? "week" : "month";
-    durationSummary.textContent = `${count} ${unitLabel}${count === 1 ? "" : "s"} · calculated automatically`;
-    durationPeriod.textContent = `Estimated period if verified today: ${formatDate(start)} – ${formatDate(end)}.`;
+    durationSummary.textContent = `${count} ${unitLabel}${count === 1 ? "" : "s"}`;
+    durationPeriod.textContent = `If approved today: ${formatDate(start)} – ${formatDate(end)}.`;
+  }
+
+  function clearFieldErrors(step) {
+    step.querySelectorAll(".is-invalid").forEach(field => field.classList.remove("is-invalid"));
+    const alert = document.querySelector("[data-form-alert]");
+    if (alert) { alert.hidden = true; alert.textContent = ""; }
+  }
+
+  function showFieldError(field, message) {
+    field.classList.add("is-invalid");
+    const alert = document.querySelector("[data-form-alert]");
+    if (alert) {
+      alert.textContent = message;
+      alert.hidden = false;
+    }
   }
 
   function valid(step) {
-    for (const field of step.querySelectorAll("input,select,textarea")) {
-      if (!field.disabled && !field.checkValidity()) {
-        field.reportValidity();
+    clearFieldErrors(step);
+    const fields = Array.from(step.querySelectorAll("input,select,textarea")).filter(field => !field.disabled);
+    for (const field of fields) {
+      if (!field.checkValidity()) {
+        const message = field.validity.valueMissing
+          ? "Please complete all required fields."
+          : field.validationMessage;
+        showFieldError(field, message);
+        field.focus();
         return false;
       }
     }
     const password = step.querySelector('[name="password"]');
     const confirm = step.querySelector('[name="confirm_password"]');
     if (password && confirm && password.value !== confirm.value) {
-      confirm.setCustomValidity("Passwords do not match.");
-      confirm.reportValidity();
-      confirm.setCustomValidity("");
+      showFieldError(confirm, "Passwords do not match.");
+      confirm.focus();
       return false;
     }
     return true;
@@ -144,14 +164,20 @@
   }
 
   function showFailure(error) {
-    const failure = document.getElementById("registration-failure");
+    const message = error?.message || "We could not complete your registration. Please check your details and try again.";
     const shell = document.getElementById("registration-shell");
     const success = document.getElementById("registration-success");
-    const detail = failure?.querySelector("[data-registration-failure-message]");
-    if (detail) detail.textContent = error?.message || "We could not complete your registration. Please try again.";
-    if (shell) shell.hidden = true;
+    const alert = document.querySelector("[data-form-alert]");
+    if (shell) shell.hidden = false;
     if (success) success.hidden = true;
-    if (failure) failure.hidden = false;
+    show(0);
+    const phone = form.elements.namedItem("phone");
+    if (/phone number is already registered/i.test(message)) {
+      showFieldError(phone, "That phone number is already registered with VMC.");
+    } else if (alert) {
+      alert.textContent = message;
+      alert.hidden = false;
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -209,7 +235,7 @@
     event.preventDefault();
     const submitButton = form.querySelector('[type="submit"]');
     if (submitButton?.disabled) return;
-    setMessage("Creating your account and submitting your membership…");
+    setMessage("Creating your account…");
     if (submitButton) {
       submitButton.disabled = true;
       submitButton.dataset.originalText = submitButton.textContent;
