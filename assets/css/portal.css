@@ -766,3 +766,22 @@
 }
 .registration-page .registration-progress-card strong{font-size:.74rem}
 .registration-page .registration-progress-card small{font-size:.64rem}
+
+
+/* Registration controls: keep compact on every viewport, including small screens. */
+.registration-page .registration-step-actions .button{
+  flex:0 0 auto;
+  width:auto;
+  min-width:78px;
+  padding:9px 14px;
+}
+.registration-page .registration-step-actions .button-large{
+  min-width:0;
+}
+@media(max-width:560px){
+  .registration-page .registration-step-actions .button{
+    flex:0 0 auto;
+    width:auto;
+    min-width:78px;
+  }
+}
