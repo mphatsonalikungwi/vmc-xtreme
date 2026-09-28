@@ -120,5 +120,98 @@
   form.addEventListener("input", updateMembershipPreview);
   form.addEventListener("change", updateMembershipPreview);
 
+
+  function setMessage(text, error = false) {
+    const el = form.querySelector("[data-message]");
+    if (!el) return;
+    el.textContent = text;
+    el.dataset.error = error ? "true" : "false";
+  }
+
+  function showFailure(error) {
+    const failure = document.getElementById("registration-failure");
+    const shell = document.getElementById("registration-shell");
+    const success = document.getElementById("registration-success");
+    const detail = failure?.querySelector("[data-registration-failure-message]");
+    if (detail) detail.textContent = error?.message || "We could not complete your registration. Please try again.";
+    if (shell) shell.hidden = true;
+    if (success) success.hidden = true;
+    if (failure) failure.hidden = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function submitRegistration() {
+    const { VMC_CONFIG } = await import("./config.js");
+    const formData = new FormData(form);
+    const password = String(formData.get("password") || "");
+    const confirmPassword = String(formData.get("confirm_password") || "");
+    if (password !== confirmPassword) throw new Error("Passwords do not match.");
+
+    const response = await fetch(`${VMC_CONFIG.supabaseUrl}/functions/v1/vmc-auth-v2`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: VMC_CONFIG.supabasePublishableKey
+      },
+      body: JSON.stringify({
+        action: "register",
+        full_name: formData.get("full_name"),
+        password,
+        phone: formData.get("phone"),
+        email: formData.get("email"),
+        emergency_contact: formData.get("emergency_contact"),
+        gender: formData.get("gender"),
+        date_of_birth: formData.get("date_of_birth"),
+        training_mode: formData.get("training_mode"),
+        duration_count: Number(formData.get("duration_count")),
+        duration_unit: formData.get("duration_unit"),
+        session_type: formData.get("session_type"),
+        payment_method: formData.get("payment_method"),
+        payment_reference: formData.get("payment_reference"),
+        rules_accepted: formData.get("rules_accepted") === "true",
+        rules_version: "VMC Rules v1"
+      })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "We could not create your VMC account.");
+
+    const username = String(data.username || "").trim();
+    if (!username) throw new Error("VMC created the account without returning a username. Please contact VMC.");
+
+    document.querySelector("[data-credential-username]")?.replaceChildren(document.createTextNode(username));
+    document.querySelector("[data-credential-username-login]")?.replaceChildren(document.createTextNode(username));
+    document.querySelector("[data-credential-email]")?.replaceChildren(document.createTextNode(formData.get("email") || "No email was provided"));
+    document.querySelector("[data-credential-phone]")?.replaceChildren(document.createTextNode(formData.get("phone") || "Your registered phone number"));
+
+    document.getElementById("registration-shell").hidden = true;
+    document.getElementById("registration-failure").hidden = true;
+    document.getElementById("registration-success").hidden = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  form.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    const submitButton = form.querySelector('[type="submit"]');
+    if (submitButton?.disabled) return;
+    setMessage("Creating your account and submitting your membership…");
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.dataset.originalText = submitButton.textContent;
+      submitButton.textContent = "Creating your account…";
+    }
+    try {
+      await submitRegistration();
+    } catch (error) {
+      console.error("VMC registration failed:", error);
+      showFailure(error);
+    } finally {
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = submitButton.dataset.originalText || "Create my VMC account";
+      }
+    }
+  });
+
   show(0);
 })();
