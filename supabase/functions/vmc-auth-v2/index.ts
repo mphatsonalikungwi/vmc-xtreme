@@ -162,7 +162,7 @@ async function register(body: Record<string, unknown>) {
       date_of_birth: dateOfBirth,
       must_change_password: true,
       account_status: "active",
-    });
+    }).eq("id", userId);
     if (profileError) throw profileError;
     const { data: createdProfile, error: profileReadError } = await admin.from("vmc_profiles").select("username").eq("id", userId).single();
     if (profileReadError || !createdProfile?.username) throw profileReadError ?? new Error("VMC username could not be assigned.");
