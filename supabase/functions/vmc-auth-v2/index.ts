@@ -43,15 +43,18 @@ function generateTemporaryPassword() {
 }
 
 function usernameBase(fullName: string) {
-  const clean = fullName.normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 28);
-  return clean || "member";
+  const parts = fullName.normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+    .trim().split(/\s+/).filter(Boolean);
+  const first = (parts[0] ?? "").replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+  const surname = (parts[parts.length - 1] ?? "").replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+  const base = first && surname ? `${first.slice(0, 1)}${surname}` : "";
+  return base.slice(0, 31) || "vmcmember";
 }
 
 async function findAvailableUsername(fullName: string) {
   const base = usernameBase(fullName);
-  for (let n = 1; n <= 50; n++) {
-    const candidate = `@${base}_vmc${n}`;
+  for (let n = 0; n <= 50; n++) {
+    const candidate = n === 0 ? `@${base}` : `@${base}${n + 1}`;
     const { data, error } = await admin.from("vmc_profiles").select("id").eq("username", candidate).maybeSingle();
     if (error) throw error;
     if (!data) return candidate;
@@ -136,7 +139,6 @@ async function register(body: Record<string, unknown>) {
   }
 
   const username = await findAvailableUsername(fullName);
-  const temporaryPassword = generateTemporaryPassword();
   const { data, error } = await admin.auth.admin.createUser({
     email: email ?? undefined,
     phone: phone ?? undefined,
@@ -153,7 +155,6 @@ async function register(body: Record<string, unknown>) {
   try {
     const { error: profileError } = await admin.from("vmc_profiles").update({
       full_name: fullName,
-      username,
       phone,
       email,
       emergency_contact: emergencyContact,
@@ -161,8 +162,11 @@ async function register(body: Record<string, unknown>) {
       date_of_birth: dateOfBirth,
       must_change_password: true,
       account_status: "active",
-    }).eq("id", userId);
+    });
     if (profileError) throw profileError;
+    const { data: createdProfile, error: profileReadError } = await admin.from("vmc_profiles").select("username").eq("id", userId).single();
+    if (profileReadError || !createdProfile?.username) throw profileReadError ?? new Error("VMC username could not be assigned.");
+    const assignedUsername = createdProfile.username;
 
     const { data: role, error: roleError } = await admin.from("vmc_roles").select("id").eq("name", "member").single();
     if (roleError || !role) throw roleError ?? new Error("Member role is not configured.");
@@ -195,8 +199,7 @@ async function register(body: Record<string, unknown>) {
 
     return json({
       ok: true,
-      username,
-      temporary_password: password,
+      username: assignedUsername,
       membership: {
         id: membership.id,
         plan: plan.name,
@@ -228,7 +231,7 @@ async function changeUsername(req: Request, body: Record<string, unknown>) {
   if (authError || !authData.user) return json({ error: "Your session is invalid or expired." }, 401);
   const raw = typeof body.username === "string" ? body.username.trim().toLowerCase() : "";
   const username = raw.startsWith("@") ? raw : `@${raw}`;
-  if (!/^@[a-z0-9][a-z0-9_]{2,39}_vmc[0-9]+$/.test(username)) return json({ error: "Use a username such as @your_name_vmc1." }, 400);
+  if (!/^@[a-z0-9][a-z0-9_-]{2,39}$/.test(username)) return json({ error: "Use a valid VMC username." }, 400);
   const { data: existing } = await admin.from("vmc_profiles").select("id").ilike("username", username).neq("id", authData.user.id).maybeSingle();
   if (existing) return json({ error: "That VMC username is already in use." }, 409);
   const { error } = await admin.from("vmc_profiles").update({ username, updated_at: new Date().toISOString() }).eq("id", authData.user.id);
