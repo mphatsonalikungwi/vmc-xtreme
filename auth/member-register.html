@@ -42,14 +42,14 @@
 <div class="registration-section-heading"><span>03</span><div><h2>Membership, payment &amp; VMC rules</h2><p>Choose your training, duration and payment method, then accept the VMC rules and submit.</p></div></div>
 <div class="registration-grid">
 <label class="field field-wide">Training mode <span class="required">*</span><select name="training_mode" required><option value="">Choose your training focus</option><option>Personal Training</option><option>Cardio Training</option><option>Muscle Building &amp; Toning</option><option>Weight Loss</option><option>Group Fitness</option><option>Beginner Guidance</option></select></label>
-<label class="field">Duration <span class="required">*</span><input name="duration_count" type="number" min="1" max="3650" value="1" required></label>
-<label class="field">Duration unit <span class="required">*</span><select name="duration_unit" required><option value="day">Day(s)</option><option value="week">Week(s)</option><option value="month" selected>Month(s)</option></select></label>
-<fieldset class="field field-wide session-choice"><legend>Session access <span class="required">*</span></legend><div class="choice-grid"><label><input type="radio" name="session_type" value="single" checked><span><strong>Single</strong><small>One session per day</small></span></label><label><input type="radio" name="session_type" value="double"><span><strong>Double</strong><small>Two sessions per day</small></span></label></div></fieldset>
+<label class="field">Duration <span class="required">*</span><input name="duration_count" type="number" min="1" max="3650" placeholder="Enter duration" required></label>
+<label class="field">Duration unit <span class="required">*</span><select name="duration_unit" required><option value="" selected>Choose duration unit</option><option value="day">Day(s)</option><option value="week">Week(s)</option><option value="month">Month(s)</option></select></label>
+<fieldset class="field field-wide session-choice"><legend>Session access <span class="required">*</span></legend><div class="choice-grid"><label><input type="radio" name="session_type" value="single"><span><strong>Single</strong><small>One session per day</small></span></label><label><input type="radio" name="session_type" value="double"><span><strong>Double</strong><small>Two sessions per day</small></span></label></div></fieldset>
 <label class="field">Payment method <span class="required">*</span><select name="payment_method" required><option value="">Choose a payment method</option><option>Airtel Money</option><option>TNM Mpamba</option><option>National Bank</option><option>Cash</option></select></label>
 <label class="field">Payment reference <span class="optional" id="reference-optional">Optional</span><input name="payment_reference" maxlength="120" placeholder="Transaction / receipt reference"></label>
 </div>
-<div class="price-preview"><span>Estimated membership</span><strong id="price-preview">K30,000</strong><small id="price-explanation">1 month · Single sessions</small></div>
-<div class="duration-calculation"><strong>Membership duration</strong><span id="duration-calculation">1 month · calculated automatically</span><small id="duration-period">Estimated period if verified today.</small></div>
+<div class="price-preview"><span>Estimated membership</span><strong id="price-preview">Choose membership</strong><small id="price-explanation">Select duration and session access to calculate your membership price</small></div>
+<div class="duration-calculation"><strong>Membership duration</strong><span id="duration-calculation">Choose a duration to calculate your membership period</span><small id="duration-period">Your membership dates will be confirmed when VMC verifies your payment.</small></div>
 <div class="registration-rules-card">
 <strong>VMC rules &amp; membership terms</strong>
 <label class="rules-consent"><input type="checkbox" name="rules_accepted" value="true" required><span>I agree to the <a href="../#about">VMC rules and membership terms</a> and understand that my membership remains under review until VMC verifies my payment.</span></label>
@@ -79,6 +79,6 @@
 <a class="button button-secondary" href="../">Return to VMC Xtreme</a>
 </div>
 </section>
-<script src="../assets/js/registration-wizard.js?v=20260928-1"></script>
+<script src="../assets/js/registration-wizard.js?v=20260928-2"></script>
 <script type="module" src="../assets/js/auth.js?v=20260928-5"></script>
 </body></html>
