@@ -16,7 +16,12 @@ const admin = createClient(supabaseUrl, secretKeys["default"], {
   auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
 });
 
-const normalizePhone = (value: string) => value.replace(/[^+\d]/g, "");
+const normalizePhone = (value: string) => {
+  const cleaned = value.trim().replace(/[^+\d]/g, "");
+  if (/^0[789]\d{8}$/.test(cleaned)) return `+265${cleaned.slice(1)}`;
+  if (/^265[789]\d{8}$/.test(cleaned)) return `+${cleaned}`;
+  return cleaned;
+};
 const normalizeEmail = (value: string) => value.trim().toLowerCase();
 const normalizeUsername = (value: string) => value.trim().toLowerCase().replace(/^@/, "");
 
