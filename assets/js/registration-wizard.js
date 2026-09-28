@@ -75,16 +75,20 @@
 
   function showFieldError(field, message) {
     if (!field) return;
-    field.classList.add("is-invalid");
-    let error = field.querySelector(".field-error");
+    const container = field.matches(".field, .rules-consent")
+      ? field
+      : field.closest(".field, .rules-consent");
+    if (!container) return;
+    container.classList.add("is-invalid");
+    let error = container.querySelector(".field-error");
     if (!error) {
       error = document.createElement("small");
       error.className = "field-error";
-      field.appendChild(error);
+      container.appendChild(error);
     }
     error.textContent = message;
     error.hidden = false;
-    const input = field.querySelector("input,select,textarea");
+    const input = container.querySelector("input,select,textarea");
     if (input) {
       const errorId = `field-error-${input.name || Math.random().toString(36).slice(2)}`;
       error.id = errorId;
@@ -183,18 +187,44 @@
     if (shell) shell.hidden = false;
     if (success) success.hidden = true;
 
-    const phone = form.elements.namedItem("phone");
+    const fields = {
+      full_name: form.elements.namedItem("full_name"),
+      phone: form.elements.namedItem("phone"),
+      emergency_contact: form.elements.namedItem("emergency_contact"),
+      password: form.elements.namedItem("password"),
+      confirm_password: form.elements.namedItem("confirm_password"),
+      email: form.elements.namedItem("email"),
+      gender: form.elements.namedItem("gender"),
+      date_of_birth: form.elements.namedItem("date_of_birth"),
+      training_mode: form.elements.namedItem("training_mode"),
+      duration_count: form.elements.namedItem("duration_count"),
+      duration_unit: form.elements.namedItem("duration_unit"),
+      session_type: form.elements.namedItem("session_type"),
+      payment_method: form.elements.namedItem("payment_method"),
+      payment_reference: form.elements.namedItem("payment_reference"),
+      rules_accepted: form.elements.namedItem("rules_accepted")
+    };
+
     const fieldMessages = [
-      [/phone number is already registered/i, phone, "That phone number is already registered with VMC."],
-      [/enter a valid phone number/i, phone, "Enter a valid phone number, for example +265 991 203 382."]
+      [/phone number is already registered/i, fields.phone, "That phone number is already registered with VMC."],
+      [/enter a valid phone number/i, fields.phone, "Enter a valid phone number, for example +265 991 203 382."],
+      [/email.*already registered|email.*already exists/i, fields.email, "That email address is already registered with VMC."],
+      [/full.?name/i, fields.full_name, message],
+      [/emergency.?contact/i, fields.emergency_contact, message],
+      [/passwords? do not match|password.*match/i, fields.confirm_password, "Passwords do not match."],
+      [/training.?mode/i, fields.training_mode, message],
+      [/duration.?count|duration must|duration.*valid/i, fields.duration_count, message],
+      [/duration.?unit/i, fields.duration_unit, message],
+      [/session.?type|session access/i, fields.session_type, message],
+      [/payment.?method/i, fields.payment_method, message],
+      [/payment.?reference/i, fields.payment_reference, message],
+      [/rules|terms.*accept/i, fields.rules_accepted, "Please accept the VMC rules and membership terms."]
     ];
-    const match = fieldMessages.find(([pattern]) => pattern.test(message));
+    const match = fieldMessages.find(([pattern, field]) => field && pattern.test(message));
 
     if (match) {
-      show(0);
       showFieldError(match[1], match[2]);
       match[1]?.focus();
-      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
@@ -204,7 +234,6 @@
         : message,
       true
     );
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function submitRegistration() {
@@ -219,7 +248,6 @@
     const confirmPassword = String(formData.get("confirm_password") || "");
     if (password !== confirmPassword) {
       const confirm = form.elements.namedItem("confirm_password");
-      show(0);
       showFieldError(confirm, "Passwords do not match.");
       confirm?.focus();
       throw new Error("Passwords do not match.");
