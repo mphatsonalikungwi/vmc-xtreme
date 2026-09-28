@@ -785,3 +785,69 @@
     min-width:78px;
   }
 }
+
+
+/* Registration accessibility: every action has a clear background and readable text. */
+.registration-page .registration-step-actions .button-secondary,
+.registration-page .failure-actions .button-secondary,
+.registration-page .success-actions .button-secondary{
+  background:#eef1f2;
+  border-color:#cbd2d6;
+  color:#17212a;
+}
+.registration-page .registration-step-actions .button-secondary:hover,
+.registration-page .failure-actions .button-secondary:hover,
+.registration-page .success-actions .button-secondary:hover{
+  background:#e1e6e8;
+  border-color:#b9c2c7;
+  color:#0b1218;
+}
+.registration-page .registration-step-actions .button-primary,
+.registration-page .failure-actions .button-primary,
+.registration-page .success-actions .button-primary{
+  background:#0b1218;
+  border-color:#0b1218;
+  color:#fff;
+}
+.registration-page .registration-step-actions .button-primary:hover,
+.registration-page .failure-actions .button-primary:hover,
+.registration-page .success-actions .button-primary:hover{
+  background:#18242e;
+  border-color:#18242e;
+  color:#fff;
+}
+.registration-page .registration-step-actions .button,
+.registration-page .failure-actions .button,
+.registration-page .success-actions .button{
+  color:#17212a;
+}
+.registration-page .registration-step-actions .button-primary,
+.registration-page .failure-actions .button-primary,
+.registration-page .success-actions .button-primary{
+  color:#fff;
+}
+.registration-page .password-toggle{
+  width:auto;
+  min-width:48px;
+  height:32px;
+  padding:5px 9px;
+  background:#eef1f2;
+  border:1px solid #cbd2d6;
+  color:#26323b;
+  font:inherit;
+  font-size:.72rem;
+  font-weight:800;
+  line-height:1;
+}
+.registration-page .password-toggle:hover{
+  background:#e1e6e8;
+  border-color:#b9c2c7;
+  color:#0b1218;
+}
+.registration-page .password-toggle:focus-visible{
+  outline:2px solid #8fb8d4;
+  outline-offset:2px;
+}
+.registration-page .password-field input{
+  padding-right:72px;
+}
