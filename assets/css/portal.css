@@ -903,3 +903,11 @@
     margin-bottom:12px;
   }
 }
+
+.registration-page .rules-consent input.is-invalid{
+  outline:2px solid #c83b28;
+  outline-offset:1px;
+}
+.registration-page .rules-consent.is-invalid{
+  color:#a62f1d;
+}
