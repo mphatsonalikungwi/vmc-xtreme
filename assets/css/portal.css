@@ -851,3 +851,55 @@
 .registration-page .password-field input{
   padding-right:72px;
 }
+
+
+/* Registration messages and required-field clarity */
+.registration-page .registration-form-alert{
+  margin:0 0 16px;
+  padding:9px 11px;
+  border:1px solid #e1a49a;
+  border-radius:8px;
+  background:#fff2ef;
+  color:#a62f1d;
+  font-size:.76rem;
+  font-weight:800;
+  line-height:1.4;
+}
+.registration-page .field.is-invalid input,
+.registration-page .field.is-invalid select,
+.registration-page .session-choice.is-invalid .choice-grid span,
+.registration-page .rules-consent.is-invalid{
+  border-color:#c83b28 !important;
+  box-shadow:0 0 0 2px rgba(200,59,40,.08);
+}
+.registration-page .field.is-invalid::after{
+  content:"Please check this field.";
+  display:block;
+  margin-top:4px;
+  color:#b33220;
+  font-size:.7rem;
+  font-weight:800;
+}
+.registration-page .field:has(input[required]),
+.registration-page .field:has(select[required]){
+  /* Required fields already show the visible asterisk in their labels. */
+}
+.registration-page .rules-consent{
+  position:relative;
+}
+.registration-page .rules-consent > .required{
+  color:#b33220;
+  font-weight:900;
+  margin-right:-6px;
+}
+.registration-page .registration-intro{
+  margin-bottom:18px;
+}
+.registration-page .registration-shell{
+  padding-top:18px;
+}
+@media(max-width:560px){
+  .registration-page .registration-form-alert{
+    margin-bottom:12px;
+  }
+}
