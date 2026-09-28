@@ -244,9 +244,6 @@ $("#password-form")?.addEventListener("submit", async (event) => {
   go(destination);
 });
 
-const { data: initialSession } = await supabase.auth.getSession();
-if ($("#password-form") && !initialSession.session) go("./member-login.html");
-
 const registrationForm = $("#member-register-form");
 const pricePreview = $("#price-preview");
 const priceExplanation = $("#price-explanation");
@@ -258,6 +255,7 @@ const registrationSteps = [...document.querySelectorAll("#member-register-form .
 let currentRegistrationStep = 0;
 
 function validateRegistrationStep(step) {
+  if (!step) return false;
   const fields = [...step.querySelectorAll("input, select, textarea")].filter((field) => !field.disabled);
   for (const field of fields) {
     if (!field.checkValidity()) {
@@ -277,23 +275,60 @@ function validateRegistrationStep(step) {
 }
 
 function showRegistrationStep(index) {
+  if (!registrationSteps.length) return;
   currentRegistrationStep = Math.max(0, Math.min(index, registrationSteps.length - 1));
   registrationSteps.forEach((step, i) => {
     step.hidden = i !== currentRegistrationStep;
   });
+
+  document.querySelectorAll("[data-registration-progress]").forEach((card, i) => {
+    const active = i === currentRegistrationStep;
+    card.classList.toggle("is-active", active);
+    card.setAttribute("aria-current", active ? "step" : "false");
+  });
+
+  if (currentRegistrationStep === 2) {
+    updateRegistrationPrice();
+    updateDurationCalculation();
+  }
   window.scrollTo({ top: 0, behavior: "smooth" });
-  if (currentRegistrationStep === 2) updateRegistrationPrice();
 }
 
 document.querySelectorAll("#member-register-form [data-next-step]").forEach((button) => {
-  button.addEventListener("click", () => {
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
     const step = registrationSteps[currentRegistrationStep];
     if (validateRegistrationStep(step)) showRegistrationStep(currentRegistrationStep + 1);
   });
 });
 
 document.querySelectorAll("#member-register-form [data-prev-step]").forEach((button) => {
-  button.addEventListener("click", () => showRegistrationStep(currentRegistrationStep - 1));
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    showRegistrationStep(currentRegistrationStep - 1);
+  });
+});
+
+document.querySelectorAll("[data-registration-progress]").forEach((card) => {
+  card.addEventListener("click", (event) => {
+    event.preventDefault();
+    const target = Number(card.dataset.registrationProgress) - 1;
+    if (target <= currentRegistrationStep) showRegistrationStep(target);
+  });
+});
+
+registrationForm?.addEventListener("input", updateRegistrationPrice);
+registrationForm?.addEventListener("change", updateRegistrationPrice);
+paymentMethodInput?.addEventListener("change", () => {
+  referenceInput.required = false;
+  referenceInput.placeholder = paymentMethodInput.value === "Cash"
+    ? "Optional cash receipt / note"
+    : "Optional transaction / receipt reference";
+});
+
+
+supabase.auth.getSession().then(({ data: initialSession }) => {
+  if ($("#password-form") && !initialSession.session) go("./member-login.html");
 });
 
 function calculateMembershipPeriod(count, unit) {
