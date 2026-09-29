@@ -12,7 +12,7 @@ function titleCase(v){return text(v).replaceAll("_"," ").replace(/\b\w/g,c=>c.to
 function initials(name){const p=text(name).trim().split(/\s+/).filter(Boolean);return(p.slice(0,2).map(x=>x[0]).join("")||"V").toUpperCase()}
 const GALLERY_BUCKET="member-gallery";
 const memberApiUrl=`${VMC_CONFIG.supabaseUrl}/functions/v1/vmc-member-api`;
-const managementApiUrl=`${VMC_CONFIG.supabaseUrl}/functions/v1/vmc-management-api`;
+const managementApiUrl=`${VMC_CONFIG.supabaseUrl}/functions/v1/vmc-management-api-v2`;
 const MAX_IMAGE_BYTES=8*1024*1024;
 const ALLOWED_IMAGE_TYPES=["image/jpeg","image/png","image/webp"];
 async function signedGalleryUrl(path){if(!path)return null;const{data,error}=await supabase.storage.from(GALLERY_BUCKET).createSignedUrl(path,3600);if(error)throw error;return data?.signedUrl||null}
