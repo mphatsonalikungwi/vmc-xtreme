@@ -34,7 +34,55 @@ async function payments(){const ids=await memberIds();if(!ids.length)return{paym
 async function attendance(){const ids=await memberIds();if(!ids.length)return{attendance:[],members:[]};const[r,a]=await Promise.all([admin.from("vmc_profiles").select("id,full_name").in("id",ids).order("full_name"),admin.from("vmc_attendance").select("id,member_id,checked_in_at,checked_out_at,recorded_by,created_at").in("member_id",ids).order("checked_in_at",{ascending:false}).limit(500)]);if(r.error)throw r.error;if(a.error)throw a.error;const names=new Map((r.data??[]).map((x:any)=>[x.id,x.full_name]));const actorIds=[...new Set((a.data??[]).map((x:any)=>x.recorded_by).filter(Boolean))];let actorNames=new Map<string,string>();if(actorIds.length){const{data:actors}=await admin.from("vmc_profiles").select("id,full_name").in("id",actorIds);actorNames=new Map((actors??[]).map((x:any)=>[x.id,x.full_name]))}return{members:r.data??[],attendance:(a.data??[]).map((x:any)=>({...x,member_name:names.get(x.member_id)??"Unknown member",recorded_by_name:x.recorded_by?actorNames.get(x.recorded_by)??"VMC staff":"VMC staff"}))}}
 async function reports(){const ids=await memberIds();if(!ids.length)return{stats:{totalMembers:0,activeMembers:0,pendingPayments:0,verifiedRevenue:0,totalVisits:0},months:[]};const[r,m,p,a]=await Promise.all([admin.from("vmc_profiles").select("id,account_status").in("id",ids),admin.from("vmc_memberships").select("member_id,status,end_date,created_at").in("member_id",ids).order("created_at",{ascending:false}),admin.from("vmc_payments").select("amount,status,payment_date").in("member_id",ids).order("payment_date",{ascending:false}).limit(1000),admin.from("vmc_attendance").select("checked_in_at").in("member_id",ids).limit(2000)]);for(const x of[r,m,p,a])if(x.error)throw x.error;const latest=new Map<string,any>();for(const x of m.data??[])if(!latest.has(x.member_id))latest.set(x.member_id,x);const t=today();const active=(r.data??[]).filter((x:any)=>x.account_status==="active"&&latest.get(x.id)?.status==="active"&&String(latest.get(x.id)?.end_date||"")>=t).length;const verifiedRevenue=(p.data??[]).filter((x:any)=>x.status==="verified").reduce((s:number,x:any)=>s+Number(x.amount||0),0);const pending=(p.data??[]).filter((x:any)=>x.status==="pending").length;const monthMap=new Map<string,{visits:number,revenue:number}>();for(const x of a.data??[]){const key=String(x.checked_in_at).slice(0,7);const v=monthMap.get(key)||{visits:0,revenue:0};v.visits++;monthMap.set(key,v)}for(const x of p.data??[]){if(x.status!=="verified")continue;const key=String(x.payment_date).slice(0,7);const v=monthMap.get(key)||{visits:0,revenue:0};v.revenue+=Number(x.amount||0);monthMap.set(key,v)}const months=[...monthMap.entries()].sort((a,b)=>b[0].localeCompare(a[0])).slice(0,6).map(([month,v])=>({month,visits:v.visits,revenue:v.revenue}));return{stats:{totalMembers:r.data?.length??0,activeMembers:active,pendingPayments:pending,verifiedRevenue,totalVisits:a.data?.length??0},months}}
 async function staff(){const{data:roles,error}=await admin.from("vmc_roles").select("id,name").in("name",["staff","manager","owner"]);if(error)throw error;const roleMap=new Map((roles??[]).map((r:any)=>[r.id,r.name]));const ids=[...(await admin.from("vmc_user_roles").select("user_id,role_id").in("role_id",[...roleMap.keys()])).data??[]];if(!ids.length)return{staff:[]};const{data:profiles,error:e}=await admin.from("vmc_profiles").select("id,full_name,username,email,phone,account_status,created_at").in("id",ids.map((x:any)=>x.user_id)).order("created_at",{ascending:false});if(e)throw e;const roleByUser=new Map(ids.map((x:any)=>[x.user_id,roleMap.get(x.role_id)]));return{staff:(profiles??[]).map((p:any)=>({...p,role:roleByUser.get(p.id)||"unknown"}))}}
-async function updatePayment(actorId:string,paymentId:string,status:"verified"|"rejected"){requireRole((await actorRole(actorId)),["staff","manager","owner"]);const{data:p,error}=await admin.from("vmc_payments").select("id,member_id,membership_id,amount,status").eq("id",paymentId).maybeSingle();if(error)throw error;if(!p)throw new Error("Payment record not found.");if(p.status!=="pending")throw new Error("This payment has already been reviewed.");const{data:m,error:me}=await admin.from("vmc_memberships").select("id,member_id,plan_id,status,start_date,end_date,plan:vmc_membership_plans(duration_unit,duration_count,session_type,price)").eq("id",p.membership_id).maybeSingle();if(me)throw me;if(!m)throw new Error("Membership record not found.");const now=new Date().toISOString();if(status==="rejected"){const{error:e}=await admin.from("vmc_payments").update({status:"rejected",verified_by:actorId,verified_at:now}).eq("id",paymentId).eq("status","pending");if(e)throw e;const{error:e2}=await admin.from("vmc_memberships").update({status:"cancelled",updated_at:now}).eq("id",m.id);if(e2)throw e2;await audit(actorId,"payment_rejected","payment",paymentId,{membership_id:m.id,amount:p.amount});return{ok:true,status}}const t=today();const{data:active,error:ae}=await admin.from("vmc_memberships").select("end_date").eq("member_id",p.member_id).eq("status","active").gte("end_date",t).order("end_date",{ascending:false}).limit(1).maybeSingle();if(ae)throw ae;const start=active?.end_date?new Date(active.end_date+"T00:00:00Z"):new Date(t+"T00:00:00Z");if(active)start.setUTCDate(start.getUTCDate()+1);const startDate=start.toISOString().slice(0,10);const plan=m.plan as any;const end=addDuration(startDate,Number(plan.duration_count||1),String(plan.duration_unit));const{error:e}=await admin.from("vmc_payments").update({status:"verified",verified_by:actorId,verified_at:now}).eq("id",paymentId).eq("status","pending");if(e)throw e;const{error:e2}=await admin.from("vmc_memberships").update({status:"active",start_date:startDate,end_date:end,updated_at:now}).eq("id",m.id);if(e2)throw e2;await audit(actorId,"payment_verified","payment",paymentId,{membership_id:m.id,amount:p.amount,start_date:startDate,end_date:end});return{ok:true,status,start_date:startDate,end_date:end}}
+async function updatePayment(actorId:string,paymentId:string,status:"verified"|"rejected"){
+  requireRole((await actorRole(actorId)),["staff","manager","owner"]);
+  const{data:p,error}=await admin.from("vmc_payments").select("id,member_id,membership_id,amount,status").eq("id",paymentId).maybeSingle();
+  if(error)throw error;
+  if(!p)throw new Error("Payment record not found.");
+  if(p.status!=="pending")throw new Error("This payment has already been reviewed.");
+
+  const{data:m,error:me}=await admin.from("vmc_memberships").select("id,member_id,plan_id,status,start_date,end_date,plan:vmc_membership_plans(duration_unit,duration_count,session_type,price)").eq("id",p.membership_id).maybeSingle();
+  if(me)throw me;
+  if(!m)throw new Error("Membership record not found.");
+  if(m.member_id!==p.member_id)throw new Error("Payment and membership records do not match.");
+  if(m.status!=="pending")throw new Error("This membership request has already been processed.");
+
+  const now=new Date().toISOString();
+
+  if(status==="rejected"){
+    const{data:updatedPayment,error:e}=await admin.from("vmc_payments").update({status:"rejected",verified_by:actorId,verified_at:now}).eq("id",paymentId).eq("status","pending").select("id").maybeSingle();
+    if(e)throw e;
+    if(!updatedPayment)throw new Error("This payment has already been reviewed.");
+    const{error:e2}=await admin.from("vmc_memberships").update({status:"cancelled",updated_at:now}).eq("id",m.id).eq("status","pending").select("id").maybeSingle();
+    if(e2){
+      await admin.from("vmc_payments").update({status:"pending",verified_by:null,verified_at:null}).eq("id",paymentId).eq("status","rejected");
+      throw e2;
+    }
+    await audit(actorId,"payment_rejected","payment",paymentId,{membership_id:m.id,amount:p.amount});
+    return{ok:true,status};
+  }
+
+  const t=today();
+  const{data:active,error:ae}=await admin.from("vmc_memberships").select("end_date").eq("member_id",p.member_id).eq("status","active").gte("end_date",t).order("end_date",{ascending:false}).limit(1).maybeSingle();
+  if(ae)throw ae;
+  const start=active?.end_date?new Date(active.end_date+"T00:00:00Z"):new Date(t+"T00:00:00Z");
+  if(active)start.setUTCDate(start.getUTCDate()+1);
+  const startDate=start.toISOString().slice(0,10);
+  const plan=m.plan as any;
+  const end=addDuration(startDate,Number(plan.duration_count||1),String(plan.duration_unit));
+
+  const{data:updatedPayment,error:e}=await admin.from("vmc_payments").update({status:"verified",verified_by:actorId,verified_at:now}).eq("id",paymentId).eq("status","pending").select("id").maybeSingle();
+  if(e)throw e;
+  if(!updatedPayment)throw new Error("This payment has already been reviewed.");
+
+  const{error:e2}=await admin.from("vmc_memberships").update({status:"active",start_date:startDate,end_date:end,updated_at:now}).eq("id",m.id).eq("status","pending").select("id").maybeSingle();
+  if(e2){
+    await admin.from("vmc_payments").update({status:"pending",verified_by:null,verified_at:null}).eq("id",paymentId).eq("status","verified");
+    throw e2;
+  }
+  await audit(actorId,"payment_verified","payment",paymentId,{membership_id:m.id,amount:p.amount,start_date:startDate,end_date:end});
+  return{ok:true,status,start_date:startDate,end_date:end};
+}
 async function actorRole(userId:string){const{data}=await admin.from("vmc_user_roles").select("role:vmc_roles(name)").eq("user_id",userId);return(data??[]).map((x:any)=>x.role?.name).find(Boolean)||""}
 async function setAccountStatus(actorId:string,userId:string,status:string){const role=await actorRole(actorId);requireRole(role,["manager","owner"]);if(actorId===userId)throw new Error("You cannot change your own management access.");if(!["active","suspended","deactivated"].includes(status))throw new Error("Invalid account status.");const targetRole=await actorRole(userId);if(targetRole!=="member")throw new Error("Only member accounts can be changed here.");const{error}=await admin.from("vmc_profiles").update({account_status:status,updated_at:new Date().toISOString()}).eq("id",userId);if(error)throw error;await audit(actorId,"member_status_changed","profile",userId,{to:status});return{ok:true,status}}
 async function checkIn(actorId,memberId:string){requireRole(await actorRole(actorId),["staff","manager","owner"]);const role=await actorRole(memberId);if(role!=="member")throw new Error("Only member accounts can be checked in.");const{data:open}=await admin.from("vmc_attendance").select("id").eq("member_id",memberId).is("checked_out_at",null).order("checked_in_at",{ascending:false}).limit(1).maybeSingle();if(open)throw new Error("This member is already checked in.");const{data:m}=await admin.from("vmc_memberships").select("status,end_date").eq("member_id",memberId).eq("status","active").order("created_at",{ascending:false}).limit(1).maybeSingle();if(!m||!m.end_date||m.end_date<today())throw new Error("This member does not have an active membership.");const{data,error}=await admin.from("vmc_attendance").insert({member_id:memberId,recorded_by:actorId}).select("id,checked_in_at").single();if(error)throw error;await audit(actorId,"attendance_check_in","attendance",data.id,{member_id:memberId});return{ok:true,attendance:data}}
