@@ -197,15 +197,10 @@ $("#password-form")?.addEventListener("submit", async (event) => {
       return;
     }
 
-    if (!recoveryMode) {
-      const { error: verifyError } = await supabase.auth.signInWithPassword({
-        email: sessionData.session.user.email,
-        password: currentPassword
-      });
-      if (verifyError) throw new Error("The current password is incorrect.");
-    }
+    const updateAttributes = { password };
+    if (!recoveryMode) updateAttributes.current_password = currentPassword;
 
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    const { error: updateError } = await supabase.auth.updateUser(updateAttributes);
     if (updateError) throw updateError;
 
     const { error: rpcError } = await supabase.rpc("vmc_complete_password_change");
