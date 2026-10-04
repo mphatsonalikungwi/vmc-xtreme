@@ -127,6 +127,28 @@ $("[data-management-login]")?.addEventListener("submit", async (event) => {
   }
 });
 
+$("[data-password-reset]")?.addEventListener("click", async (event) => {
+  event.preventDefault();
+  const identifierInput = document.querySelector('[data-management-login] input[name="identifier"]');
+  const identifier = String(identifierInput?.value || "").trim();
+  if (!identifier) {
+    message("Enter your VMC username, email or phone number first.", true);
+    identifierInput?.focus();
+    return;
+  }
+  const button = event.currentTarget;
+  button.disabled = true;
+  message("Sending password reset instructions…");
+  try {
+    const data = await authRequest("request_password_reset", { identifier });
+    message(data.message || "If the account is eligible, password reset instructions have been sent to its registered email address.");
+  } catch (error) {
+    message(error?.message || "Password reset could not be requested. Please try again.", true);
+  } finally {
+    button.disabled = false;
+  }
+});
+
 function showRegistrationFailure(error) {
   const shell = $("#registration-shell");
   const success = $("#registration-success");
@@ -155,7 +177,8 @@ $("#password-form")?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const submit = event.currentTarget.querySelector('button[type="submit"]');
   if (submit) submit.disabled = true;
-  message("Saving your new password…");
+  const recoveryMode = new URLSearchParams(window.location.search).get("recovery") === "1";
+  message(recoveryMode ? "Saving your new password…" : "Saving your new password…");
 
   try {
     const form = new FormData(event.currentTarget);
@@ -163,10 +186,10 @@ $("#password-form")?.addEventListener("submit", async (event) => {
     const password = String(form.get("password") || "");
     const confirm = String(form.get("confirm_password") || "");
 
-    if (!currentPassword) throw new Error("Enter your current password.");
+    if (!recoveryMode && !currentPassword) throw new Error("Enter your current password.");
     if (password.length < 8) throw new Error("Password must be at least 8 characters.");
     if (password !== confirm) throw new Error("Passwords do not match.");
-    if (currentPassword === password) throw new Error("Your new password must be different from your current password.");
+    if (!recoveryMode && currentPassword === password) throw new Error("Your new password must be different from your current password.");
 
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     if (sessionError || !sessionData.session) {
@@ -174,11 +197,13 @@ $("#password-form")?.addEventListener("submit", async (event) => {
       return;
     }
 
-    const { error: verifyError } = await supabase.auth.signInWithPassword({
-      email: sessionData.session.user.email,
-      password: currentPassword
-    });
-    if (verifyError) throw new Error("The current password is incorrect.");
+    if (!recoveryMode) {
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: sessionData.session.user.email,
+        password: currentPassword
+      });
+      if (verifyError) throw new Error("The current password is incorrect.");
+    }
 
     const { error: updateError } = await supabase.auth.updateUser({ password });
     if (updateError) throw updateError;
@@ -187,7 +212,7 @@ $("#password-form")?.addEventListener("submit", async (event) => {
     if (rpcError) throw new Error("Password changed, but account setup could not be completed. Please sign in again.");
 
     const next = new URLSearchParams(window.location.search).get("next");
-    go(next === "../management/" ? "../management/" : "../member/");
+    go(next === "../management/" || recoveryMode ? "../management/" : "../member/");
   } catch (error) {
     message(error?.message || "Password change could not be completed. Please try again.", true);
     if (submit) submit.disabled = false;
