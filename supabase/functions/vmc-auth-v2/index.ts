@@ -82,6 +82,119 @@ async function getOrCreatePlan(unit: string, count: number, sessionType: string,
   return data;
 }
 
+async function bootstrapOwner(body: Record<string, unknown>, req: Request) {
+  const suppliedNonce = req.headers.get("x-vmc-bootstrap-nonce")?.trim() || "";
+  if (!suppliedNonce) return json({ error: "Bootstrap authorization required." }, 403);
+
+  const nonceBytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(suppliedNonce));
+  const nonceHash = Array.from(new Uint8Array(nonceBytes)).map((b) => b.toString(16).padStart(2, "0")).join("");
+
+  const { data: nonce, error: nonceReadError } = await admin
+    .from("vmc_bootstrap_nonces")
+    .select("id,expires_at,used_at")
+    .eq("nonce_hash", nonceHash)
+    .maybeSingle();
+
+  if (nonceReadError || !nonce || nonce.used_at || new Date(nonce.expires_at).getTime() < Date.now()) {
+    return json({ error: "Bootstrap authorization is invalid or expired." }, 403);
+  }
+
+  const { error: nonceUseError } = await admin
+    .from("vmc_bootstrap_nonces")
+    .update({ used_at: new Date().toISOString() })
+    .eq("id", nonce.id)
+    .is("used_at", null);
+
+  if (nonceUseError) return json({ error: "Bootstrap authorization could not be completed." }, 500);
+
+  const ownerEmail = typeof body.email === "string" ? normalizeEmail(body.email) : "";
+  const ownerPhone = typeof body.phone === "string" ? normalizePhone(body.phone) : null;
+  const ownerPassword = typeof body.password === "string" ? body.password : "";
+  const ownerName = typeof body.full_name === "string" ? body.full_name.trim() : "";
+  const ownerUsernameRaw = typeof body.username === "string" ? body.username.trim().toLowerCase() : "";
+  const ownerUsername = ownerUsernameRaw.startsWith("@") ? ownerUsernameRaw : `@${ownerUsernameRaw}`;
+
+  if (!ownerEmail || !ownerPassword || ownerPassword.length < 8 || ownerName.length < 2 || !/^@[a-z0-9][a-z0-9._-]{2,31}$/.test(ownerUsername)) {
+    return json({ error: "Valid owner details and a password of at least 8 characters are required." }, 400);
+  }
+
+  const { data: memberProfiles } = await admin
+    .from("vmc_profiles")
+    .select("id")
+    .in("id", (await admin.from("vmc_user_roles").select("user_id,role:vmc_roles!inner(name)").eq("role.name", "member")).data?.map((r) => r.user_id) || []);
+
+  const memberIds = (memberProfiles || []).map((row) => row.id);
+
+  if (memberIds.length) {
+    await admin.from("vmc_payments").delete().in("member_id", memberIds);
+    await admin.from("vmc_memberships").delete().in("member_id", memberIds);
+    await admin.from("vmc_attendance").delete().in("member_id", memberIds);
+    await admin.from("vmc_member_photos").delete().in("member_id", memberIds);
+    await admin.from("vmc_notifications").delete().in("member_id", memberIds);
+    await admin.from("vmc_audit_logs").delete().in("actor_id", memberIds);
+    await admin.from("vmc_user_roles").delete().in("user_id", memberIds);
+    await admin.from("vmc_profiles").delete().in("id", memberIds);
+  }
+
+  const users = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  const authUsers = users.data?.users || [];
+  for (const user of authUsers) {
+    const isRemovedMember = memberIds.includes(user.id);
+    if (isRemovedMember) {
+      await admin.auth.admin.deleteUser(user.id);
+    }
+  }
+
+  const remainingOwner = authUsers.find((user) => user.email?.toLowerCase() === ownerEmail);
+  let ownerUser = remainingOwner || null;
+
+  if (ownerUser) {
+    const { data, error } = await admin.auth.admin.updateUserById(ownerUser.id, {
+      password: ownerPassword,
+      email_confirm: true,
+      phone: ownerPhone ?? undefined,
+      phone_confirm: Boolean(ownerPhone),
+      user_metadata: { ...(ownerUser.user_metadata || {}), full_name: ownerName, username: ownerUsername, must_change_password: true },
+    });
+    if (error || !data.user) return json({ error: "The owner Auth account could not be prepared." }, 500);
+    ownerUser = data.user;
+  } else {
+    const { data, error } = await admin.auth.admin.createUser({
+      email: ownerEmail,
+      password: ownerPassword,
+      email_confirm: true,
+      phone: ownerPhone ?? undefined,
+      phone_confirm: Boolean(ownerPhone),
+      user_metadata: { full_name: ownerName, username: ownerUsername, must_change_password: true },
+    });
+    if (error || !data.user) return json({ error: "The owner Auth account could not be created." }, 500);
+    ownerUser = data.user;
+  }
+
+  const { data: ownerRole, error: roleError } = await admin.from("vmc_roles").select("id").eq("name", "owner").single();
+  if (roleError || !ownerRole) return json({ error: "The owner role is not configured." }, 500);
+
+  const { error: profileError } = await admin.from("vmc_profiles").upsert({
+    id: ownerUser.id,
+    full_name: ownerName,
+    username: ownerUsername,
+    phone: ownerPhone,
+    email: ownerEmail,
+    must_change_password: true,
+    account_status: "active",
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "id" });
+  if (profileError) return json({ error: "The owner profile could not be prepared." }, 500);
+
+  const { error: roleWriteError } = await admin.from("vmc_user_roles").upsert(
+    { user_id: ownerUser.id, role_id: ownerRole.id },
+    { onConflict: "user_id" }
+  );
+  if (roleWriteError) return json({ error: "The owner role could not be assigned." }, 500);
+
+  return json({ ok: true, username: ownerUsername, email: ownerEmail, account_status: "active", must_change_password: true });
+}
+
 async function register(body: Record<string, unknown>) {
   const fullName = typeof body.full_name === "string" ? body.full_name.trim() : "";
   const email = typeof body.email === "string" && body.email.trim() ? normalizeEmail(body.email) : null;
@@ -243,41 +356,6 @@ async function changeUsername(req: Request, body: Record<string, unknown>) {
   return json({ ok: true, username });
 }
 
-async function requestPasswordReset(body: Record<string, unknown>) {
-  const identifier = typeof body.identifier === "string" ? body.identifier.trim() : "";
-  if (!identifier || identifier.length > 160) return json({ error: "Enter your VMC username, email or phone number." }, 400);
-
-  let email: string | null = null;
-  if (identifier.includes("@")) {
-    email = normalizeEmail(identifier);
-  } else if (identifier.startsWith("@")) {
-    const username = `@${normalizeUsername(identifier)}`;
-    const { data } = await admin.from("vmc_profiles")
-      .select("email,account_status").eq("username", username).maybeSingle();
-    if (data?.account_status === "active") email = data.email;
-  } else {
-    const phone = normalizePhone(identifier);
-    const { data } = await admin.from("vmc_profiles")
-      .select("email,account_status").eq("phone", phone).maybeSingle();
-    if (data?.account_status === "active") email = data.email;
-  }
-
-  if (email) {
-    const publicKeys = JSON.parse(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS")!);
-    const authClient = createClient(supabaseUrl, publicKeys["default"], {
-      auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
-    });
-    await authClient.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://vmcxtreme.pages.dev/auth/change-password.html?recovery=1",
-    });
-  }
-
-  return json({
-    ok: true,
-    message: "If that VMC account is eligible for password recovery, a reset link has been sent to its registered email address."
-  });
-}
-
 async function login(body: Record<string, unknown>) {
   const identifier = typeof body.identifier === "string" ? body.identifier.trim() : "";
   const password = typeof body.password === "string" ? body.password : "";
@@ -322,8 +400,8 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed." }, 405);
   try {
     const body = await req.json();
+    if (body?.action === "bootstrap_owner") return await bootstrapOwner(body, req);
     if (body?.action === "register") return await register(body);
-    if (body?.action === "request_password_reset") return await requestPasswordReset(body);
     if (body?.action === "login") return await login(body);
     return json({ error: "Unsupported action." }, 400);
   } catch (error) {
