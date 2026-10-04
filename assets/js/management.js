@@ -203,7 +203,7 @@ async function loadStaff() {
   const data=await request("staff");
   const rows=data.staff||[];
   const target=$("[data-staff-list]");
-  renderRows(target,rows,"No management accounts found.",staffRow);
+  renderRows(target,rows,"No management accounts found.",row=>staffRow(row,data.role));
   const form=$("[data-staff-form]");
   if(form && data.role === "owner"){
     form.hidden=false;
@@ -215,12 +215,12 @@ async function loadStaff() {
   }
 }
 
-function staffRow(row){
+function staffRow(row,currentRole){
   const item=document.createElement("article");item.className="management-record";
   const avatar=document.createElement("div");avatar.className="management-avatar";avatar.textContent=initials(row.full_name);
   const body=document.createElement("div");body.className="management-record-main";const h=document.createElement("h3");h.textContent=row.full_name;const p=document.createElement("p");p.textContent=`${row.username||"No username"} · ${String(row.role).toUpperCase()}`;body.append(h,p);
   const actions=document.createElement("div");actions.className="management-record-actions";
-  if(row.role !== "owner"){const del=button("Delete","management-action is-danger");del.onclick=async()=>{if(!confirm(`Delete ${row.full_name}'s management account?`))return;del.disabled=true;try{await request("delete_account",{user_id:row.id});notice("Management account deleted.");await loadStaff()}catch(e){notice(e.message,true);del.disabled=false}};actions.append(del)}
+  if(currentRole === "owner" && row.role !== "owner"){const del=button("Delete","management-action is-danger");del.onclick=async()=>{if(!confirm(`Delete ${row.full_name}'s management account?`))return;del.disabled=true;try{await request("delete_account",{user_id:row.id});notice("Management account deleted.");await loadStaff()}catch(e){notice(e.message,true);del.disabled=false}};actions.append(del)}
   item.append(avatar,body,actions);return item;
 }
 
