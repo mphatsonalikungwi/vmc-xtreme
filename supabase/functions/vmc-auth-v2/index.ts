@@ -243,6 +243,41 @@ async function changeUsername(req: Request, body: Record<string, unknown>) {
   return json({ ok: true, username });
 }
 
+async function requestPasswordReset(body: Record<string, unknown>) {
+  const identifier = typeof body.identifier === "string" ? body.identifier.trim() : "";
+  if (!identifier || identifier.length > 160) return json({ error: "Enter your VMC username, email or phone number." }, 400);
+
+  let email: string | null = null;
+  if (identifier.includes("@")) {
+    email = normalizeEmail(identifier);
+  } else if (identifier.startsWith("@")) {
+    const username = `@${normalizeUsername(identifier)}`;
+    const { data } = await admin.from("vmc_profiles")
+      .select("email,account_status").eq("username", username).maybeSingle();
+    if (data?.account_status === "active") email = data.email;
+  } else {
+    const phone = normalizePhone(identifier);
+    const { data } = await admin.from("vmc_profiles")
+      .select("email,account_status").eq("phone", phone).maybeSingle();
+    if (data?.account_status === "active") email = data.email;
+  }
+
+  if (email) {
+    const publicKeys = JSON.parse(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS")!);
+    const authClient = createClient(supabaseUrl, publicKeys["default"], {
+      auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+    });
+    await authClient.auth.resetPasswordForEmail(email, {
+      redirectTo: "https://vmcxtreme.pages.dev/auth/change-password.html?recovery=1",
+    });
+  }
+
+  return json({
+    ok: true,
+    message: "If that VMC account is eligible for password recovery, a reset link has been sent to its registered email address."
+  });
+}
+
 async function login(body: Record<string, unknown>) {
   const identifier = typeof body.identifier === "string" ? body.identifier.trim() : "";
   const password = typeof body.password === "string" ? body.password : "";
@@ -288,6 +323,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     if (body?.action === "register") return await register(body);
+    if (body?.action === "request_password_reset") return await requestPasswordReset(body);
     if (body?.action === "login") return await login(body);
     return json({ error: "Unsupported action." }, 400);
   } catch (error) {
