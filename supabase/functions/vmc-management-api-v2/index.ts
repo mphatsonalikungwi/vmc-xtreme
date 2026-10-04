@@ -41,5 +41,61 @@ async function checkIn(actorId,memberId:string){requireRole(await actorRole(acto
 async function checkOut(actorId,attendanceId:string){requireRole(await actorRole(actorId),["staff","manager","owner"]);const{data,error:rowError}=await admin.from("vmc_attendance").select("id,member_id,checked_out_at").eq("id",attendanceId).maybeSingle();if(rowError)throw rowError;if(!data)throw new Error("Attendance record not found.");if(data.checked_out_at)throw new Error("This attendance record is already closed.");const{data:updated,error}=await admin.from("vmc_attendance").update({checked_out_at:new Date().toISOString()}).eq("id",attendanceId).is("checked_out_at",null).select("id,checked_out_at").single();if(error)throw error;await audit(actorId,"attendance_check_out","attendance",attendanceId,{member_id:data.member_id});return{ok:true,attendance:updated}}
 async function createManagementUser(actorId:string,body:any){requireRole(await actorRole(actorId),["owner"]);const fullName=typeof body.full_name==="string"?body.full_name.trim():"";const email=typeof body.email==="string"&&body.email.trim()?body.email.trim().toLowerCase():null;const phone=typeof body.phone==="string"&&body.phone.trim()?body.phone.replace(/[^+\d]/g,""):null;const role=String(body.role||"").trim();if(fullName.length<2)throw new Error("Enter a valid full name.");if(!email&&!phone)throw new Error("Provide an email or phone number.");if(!["staff","manager","owner"].includes(role))throw new Error("Choose a valid management role.");if(email){const{data}=await admin.from("vmc_profiles").select("id").eq("email",email).maybeSingle();if(data)throw new Error("That email is already registered.")}if(phone){const{data}=await admin.from("vmc_profiles").select("id").eq("phone",phone).maybeSingle();if(data)throw new Error("That phone number is already registered.")}const password=(()=>{const bytes=new Uint8Array(18);crypto.getRandomValues(bytes);const alphabet="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";let s="";for(const b of bytes)s+=alphabet[b%alphabet.length];return s.slice(0,12)+"!9"})();const{data,error}=await admin.auth.admin.createUser({email:email??undefined,phone:phone??undefined,password,email_confirm:Boolean(email),phone_confirm:Boolean(phone),user_metadata:{full_name:fullName,must_change_password:true}});if(error||!data.user)throw new Error("Could not create the management account.");const id=data.user.id;try{const{error:e}=await admin.from("vmc_profiles").insert({id,full_name:fullName,email,phone,must_change_password:true,account_status:"active"});if(e)throw e;const{data:r,error:re}=await admin.from("vmc_roles").select("id").eq("name",role).single();if(re||!r)throw re??new Error("Role is not configured.");const{error:ue}=await admin.from("vmc_user_roles").upsert({user_id:id,role_id:r.id},{onConflict:"user_id"});if(ue)throw ue;await audit(actorId,"management_account_created","profile",id,{role});return{ok:true,user_id:id,role,temporary_password:password}}catch(e){await admin.auth.admin.deleteUser(id);throw e}}
 async function deleteAccount(actorId:string,userId:string){requireRole(await actorRole(actorId),["owner"]);if(actorId===userId)throw new Error("You cannot delete your own account.");const role=await actorRole(userId);if(!["member","staff","manager"].includes(role))throw new Error("Owner accounts cannot be deleted from this screen.");await audit(actorId,"account_deleted",role,userId,{});const{error}=await admin.auth.admin.deleteUser(userId);if(error)throw error;return{ok:true}}
-async function dashboard(){const r=await reports();return r}
+async function dashboard(){
+  const ids=await memberIds();
+  if(!ids.length){
+    return {
+      stats:{totalMembers:0,activeMembers:0,pendingPayments:0,verifiedRevenue:0,totalVisits:0,todayVisits:0,expiringSoon:0},
+      pendingPayments:[],expiringSoon:[],recentPayments:[],recentMembers:[]
+    };
+  }
+  const t=today();
+  const startOfToday=new Date(t+"T00:00:00+02:00");
+  const startOfTomorrow=new Date(startOfToday.getTime()+24*60*60*1000);
+  const expiringEnd=new Date(t+"T23:59:59+02:00");
+  expiringEnd.setDate(expiringEnd.getDate()+7);
+  const[profiles,payments,memberships,attendance,todayAttendance]=await Promise.all([
+    admin.from("vmc_profiles").select("id,full_name,username,created_at").in("id",ids).order("created_at",{ascending:false}).limit(8),
+    admin.from("vmc_payments").select("id,member_id,membership_id,amount,payment_method,receipt_reference,payment_date,status,created_at").in("member_id",ids).order("payment_date",{ascending:false}).limit(8),
+    admin.from("vmc_memberships").select("id,member_id,start_date,end_date,status,training_mode,created_at,plan:vmc_membership_plans(name,duration_unit,duration_count,session_type,price)").in("member_id",ids).eq("status","active").gte("end_date",t).lte("end_date",expiringEnd.toISOString().slice(0,10)).order("end_date",{ascending:true}).limit(8),
+    admin.from("vmc_attendance").select("id,checked_in_at").in("member_id",ids).limit(2000),
+    admin.from("vmc_attendance").select("id").in("member_id",ids).gte("checked_in_at",startOfToday.toISOString()).lt("checked_in_at",startOfTomorrow.toISOString()).limit(2000)
+  ]);
+  for(const x of[profiles,payments,memberships,attendance,todayAttendance])if(x.error)throw x.error;
+  const names=new Map((profiles.data??[]).map((x:any)=>[x.id,x.full_name]));
+  const recentMembers=(profiles.data??[]).map((p:any)=>({full_name:p.full_name,username:p.username,created_at:p.created_at}));
+  const recentPayments=(payments.data??[]).map((p:any)=>({
+    id:p.id,member:names.get(p.member_id)??"Unknown member",amount:p.amount,payment_method:p.payment_method,
+    receipt_reference:p.receipt_reference,payment_date:p.payment_date,status:p.status
+  }));
+  const pendingPayments=recentPayments.filter((p:any)=>p.status==="pending");
+  const expiringSoon=[];
+  const seenMembers=new Set<string>();
+  for(const m of memberships.data??[]){
+    if(seenMembers.has(m.member_id))continue;
+    seenMembers.add(m.member_id);
+    expiringSoon.push({full_name:names.get(m.member_id)??"Unknown member",membership:m});
+  }
+  const revenue=(payments.data??[]).filter((p:any)=>p.status==="verified").reduce((sum:number,p:any)=>sum+Number(p.amount||0),0);
+  const activeMemberships=await admin.from("vmc_memberships").select("member_id,status,end_date,created_at").in("member_id",ids).order("created_at",{ascending:false});
+  if(activeMemberships.error)throw activeMemberships.error;
+  const latest=new Map<string,any>();
+  for(const m of activeMemberships.data??[])if(!latest.has(m.member_id))latest.set(m.member_id,m);
+  const activeMembers=(profiles.data??[]).filter((p:any)=>latest.get(p.id)?.status==="active"&&String(latest.get(p.id)?.end_date||"")>=t).length;
+  return {
+    stats:{
+      totalMembers:profiles.data?.length??0,
+      activeMembers,
+      pendingPayments:pendingPayments.length,
+      verifiedRevenue:revenue,
+      totalVisits:attendance.data?.length??0,
+      todayVisits:todayAttendance.data?.length??0,
+      expiringSoon:expiringSoon.length
+    },
+    pendingPayments,
+    expiringSoon,
+    recentPayments,
+    recentMembers
+  };
+}
 Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response("ok",{headers:corsHeaders});if(req.method!=="POST")return json({error:"POST required."},405);try{const ctx=await context(req);const body=await req.json().catch(()=>({}));const action=String(body.action||"");if(action==="dashboard")return json(await dashboard());if(action==="members")return json(await members());if(action==="payments")return json(await payments());if(action==="attendance")return json(await attendance());if(action==="reports")return json(await reports());if(action==="staff")return json({...await staff(),role:ctx.role});if(action==="verify_payment")return json(await updatePayment(ctx.userId,String(body.payment_id||""),"verified"));if(action==="reject_payment")return json(await updatePayment(ctx.userId,String(body.payment_id||""),"rejected"));if(action==="set_account_status")return json(await setAccountStatus(ctx.userId,String(body.user_id||""),String(body.status||"")));if(action==="check_in")return json(await checkIn(ctx.userId,String(body.member_id||"")));if(action==="check_out")return json(await checkOut(ctx.userId,String(body.attendance_id||"")));if(action==="create_management_user")return json(await createManagementUser(ctx.userId,body));if(action==="delete_account")return json(await deleteAccount(ctx.userId,String(body.user_id||"")));return json({error:"Unsupported management action."},400)}catch(error){console.error("VMC management API v2 error:",error);return json({error:String((error as any)?.message??error)},400)}});
