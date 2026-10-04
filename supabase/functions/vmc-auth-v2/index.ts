@@ -109,9 +109,9 @@ async function bootstrapOwner(body: Record<string, unknown>, req: Request) {
 
   const ownerEmail = typeof body.email === "string" ? normalizeEmail(body.email) : "";
   const ownerPhone = typeof body.phone === "string" ? normalizePhone(body.phone) : null;
-  const suppliedPassword = typeof body.password === "string" ? body.password : "";
-  const generatedPassword = suppliedPassword ? null : generateTemporaryPassword();
-  const ownerPassword = suppliedPassword || generatedPassword;
+  const ownerPassword = typeof body.password === "string" && body.password.length
+    ? body.password
+    : `Vmc!${nonceHash.slice(0, 12)}`;
   const ownerName = typeof body.full_name === "string" ? body.full_name.trim() : "";
   const ownerUsernameRaw = typeof body.username === "string" ? body.username.trim().toLowerCase() : "";
   const ownerUsername = ownerUsernameRaw.startsWith("@") ? ownerUsernameRaw : `@${ownerUsernameRaw}`;
@@ -194,7 +194,7 @@ async function bootstrapOwner(body: Record<string, unknown>, req: Request) {
   );
   if (roleWriteError) return json({ error: "The owner role could not be assigned." }, 500);
 
-  return json({ ok: true, username: ownerUsername, email: ownerEmail, account_status: "active", must_change_password: true, temporary_password: generatedPassword });
+  return json({ ok: true, username: ownerUsername, email: ownerEmail, account_status: "active", must_change_password: true });
 }
 
 async function register(body: Record<string, unknown>) {
