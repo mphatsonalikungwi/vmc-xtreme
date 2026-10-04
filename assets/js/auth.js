@@ -1,4 +1,4 @@
-import { createClient } from "https://unpkg.com/@supabase/supabase-js@2.116.0/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm";
 import { VMC_CONFIG } from "./config.js";
 
 const supabase = createClient(VMC_CONFIG.supabaseUrl, VMC_CONFIG.supabasePublishableKey, {
